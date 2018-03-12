@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 import rospy
+import tf
 from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
-
+from itertools import cycle, islice
 import math
 
 '''
@@ -37,16 +38,71 @@ class WaypointUpdater(object):
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
         # TODO: Add other member variables you need below
+        self.vehicle_position = None
+        self.vehicle_yaw = None
+        self.waypoints = None
 
         rospy.spin()
 
     def pose_cb(self, msg):
         # TODO: Implement
-        pass
+        rospy.loginfo("pose_cb is called")
+
+        self.vehicle_position = msg.pose.position
+        orientation = msg.pose.orientation
+        _, _, self.vehicle_yaw = tf.transformations.euler_from_quaternion((orientation.x,
+                 orientation.y, orientation.z, orientation.w))
+
+	self.handle_final_waypoints()
+
+    def handle_final_waypoints(self):
+        rospy.loginfo("handle_final_waypoints")
+
+        if not self.waypoints:
+            return
+
+        if not self.vehicle_position or not self.vehicle_yaw:
+            return
+
+        next_wp = self.next_waypoint(self.waypoints,
+            self.vehicle_position, self.vehicle_yaw)
+
+        final_waypoints = islice(cycle(self.waypoints), next_wp, next_wp + LOOKAHEAD_WPS + 1)
+
+        lane = Lane()
+        lane.header.frame_id = '/World'
+        lane.header.stamp = rospy.Time.now()
+        lane.waypoints = list(final_waypoints)
+        self.final_waypoints_pub.publish(lane)
+
+    def closest_waypoint(self, waypoints, position):
+        idx = -1
+        min_distance = 100000
+        dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
+
+        for i, wp in enumerate(waypoints):
+            dist = dl(wp.pose.pose.position, position)
+            if dist < min_distance:
+                min_distance = dist
+                idx = i
+        return idx
+
+    def next_waypoint(self, waypoints, position, yaw):
+        wp_idx = self.closest_waypoint(waypoints, position)
+        wp_x = waypoints[wp_idx].pose.pose.position.x
+        wp_y = waypoints[wp_idx].pose.pose.position.y
+        heading = math.atan2(wp_y - position.y, wp_x - position.x)
+        angle = abs(yaw - heading)
+        angle = min(2 * math.pi - angle, angle);
+        if angle > math.pi / 4:
+            wp_idx = (wp_idx + 1) % len(waypoints)
+        return wp_idx
 
     def waypoints_cb(self, waypoints):
         # TODO: Implement
-        pass
+        rospy.loginfo("waypoints_cb is called")
+        self.waypoints = waypoints.waypoints
+        self.handle_final_waypoints()
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
