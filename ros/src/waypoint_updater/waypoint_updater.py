@@ -5,6 +5,7 @@ import tf
 from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
 from itertools import cycle, islice
+import numpy as np
 import math
 
 '''
@@ -22,7 +23,7 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
+LOOKAHEAD_WPS = 50 # Number of waypoints we will publish. You can change this number
 
 
 class WaypointUpdater(object):
@@ -41,6 +42,7 @@ class WaypointUpdater(object):
         self.vehicle_position = None
         self.vehicle_yaw = None
         self.waypoints = None
+        self.prev_idx = None
 
         rospy.spin()
 
@@ -80,11 +82,20 @@ class WaypointUpdater(object):
         min_distance = 100000
         dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
 
-        for i, wp in enumerate(waypoints):
-            dist = dl(wp.pose.pose.position, position)
-            if dist < min_distance:
-                min_distance = dist
-                idx = i
+        #Only search through all waypoints if we haven't yet found a closest waypoing,
+        #otherwise only loop through waypoints up to LOOKAHEAD_WPS ahead of prev idx
+        ds = []
+        N = len(self.waypoints)
+        if self.prev_idx is None:
+            [ds.append(dl(self.waypoints[i].pose.pose.position, position)) for i in range(N)]
+            idx = np.argmin(ds)
+
+        else:
+            [ds.append(dl(self.waypoints[(self.prev_idx+i)%N].pose.pose.position, position)) for i in range(LOOKAHEAD_WPS)]
+            idx = (np.argmin(ds) + self.prev_idx) % N
+
+        self.prev_idx = idx
+
         return idx
 
     def next_waypoint(self, waypoints, position, yaw):

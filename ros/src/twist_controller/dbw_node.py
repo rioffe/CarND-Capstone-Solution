@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import time
 import rospy
 from std_msgs.msg import Bool
 from dbw_mkz_msgs.msg import ThrottleCmd, SteeringCmd, BrakeCmd, SteeringReport
@@ -46,6 +47,15 @@ class DBWNode(object):
         max_lat_accel = rospy.get_param('~max_lat_accel', 3.)
         max_steer_angle = rospy.get_param('~max_steer_angle', 8.)
 
+        self.prev_time = -1
+        self.dt = 0.02
+
+        self.current_linear_v = 0
+        self.current_angular_v = 0
+        self.goal_linear_v = 0
+        self.goal_angular_v =0
+        self.dbw_enabled = False
+
         self.steer_pub = rospy.Publisher('/vehicle/steering_cmd',
                                          SteeringCmd, queue_size=1)
         self.throttle_pub = rospy.Publisher('/vehicle/throttle_cmd',
@@ -54,11 +64,33 @@ class DBWNode(object):
                                          BrakeCmd, queue_size=1)
 
         # TODO: Create `Controller` object
-        # self.controller = Controller(<Arguments you wish to provide>)
+        self.controller = Controller(self.dbw_enabled,
+                                    vehicle_mass, fuel_capacity,
+                                    brake_deadband, decel_limit,
+                                    accel_limit, wheel_radius,
+                                    wheel_base, steer_ratio,
+                                    max_lat_accel, max_steer_angle)
 
         # TODO: Subscribe to all the topics you need to
+        rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
+        rospy.Subscriber('/twist_cmd', TwistStamped, self.twist_cb)
+        rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_cb)
 
         self.loop()
+
+    def velocity_cb(self, msg):
+        rospy.loginfo("velocity_cb is called")
+        self.current_linear_v = msg.twist.linear.x
+        self.current_angular_v = msg.twist.angular.z
+
+    def twist_cb(self, msg):
+        rospy.loginfo("twist_cb is called")
+        self.goal_linear_v = msg.twist.linear.x
+        self.goal_angular_v = msg.twist.angular.z
+
+    def dbw_cb(self, msg):
+        rospy.loginfo("dbw_cb is called")
+        self.dbw_enabled = msg.data
 
     def loop(self):
         rate = rospy.Rate(50) # 50Hz
@@ -72,6 +104,21 @@ class DBWNode(object):
             #                                                     <any other argument you need>)
             # if <dbw is enabled>:
             #   self.publish(throttle, brake, steer)
+            if self.prev_time != -1:
+                cur_time = time.time()
+                self.dt = cur_time - self.prev_time
+                self.prev_time = cur_time
+            else:
+                self.prev_time = time.time()
+
+            if self.dbw_enabled:
+                throttle, brake, steer = self.controller.control(self.dbw_enabled,
+                                                                    self.goal_linear_v,
+                                                                    self.goal_angular_v,
+                                                                    self.current_linear_v,
+                                                                    self.dt)
+                self.publish(throttle, brake, steer)
+
             rate.sleep()
 
     def publish(self, throttle, brake, steer):
