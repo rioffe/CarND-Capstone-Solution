@@ -1,9 +1,13 @@
 from yaw_controller import YawController
 from pid import PID
+import rospy
+import math
+import csv
 
 GAS_DENSITY = 2.858
 ONE_MPH = 0.44704
-
+M = 0.09826218
+B = 0.04509728
 
 class Controller(object):
     def __init__(self, dbw_enabled,
@@ -15,8 +19,8 @@ class Controller(object):
         self.vehicle_mass = vehicle_mass
         self.fuel_capacity = fuel_capacity
         self.brake_deadband = brake_deadband
-        self.decel_limit = decel_limit
-        #self.accel_limit = accel_limit
+        self.decel_limit = -1*decel_limit
+        self.accel_limit = accel_limit
         self.wheel_radius = wheel_radius
         #self.wheel_base = wheel_base
         #self.steer_ratio = steer_ratio
@@ -30,17 +34,36 @@ class Controller(object):
         kp = 0.5
         ki = 1.0
         kd = 0.1
-        self.pid_throttle = PID(kp, ki, kd, mn=0.0, mx=1.0)
+        self.pid_throttle = PID(kp, ki, kd, mn=0, mx=accel_limit)
 
-    def control(self, dbw_enabled, goal_linear_v, goal_angular_v, current_linear_v, dt):
+        self.steer_data = []
+
+    def control(self, dbw_enabled, goal_linear_v, goal_angular_v, stop_a, current_linear_v, dt):
         if not dbw_enabled:
             self.pid_throttle.reset()
 
         else:
             error = goal_linear_v - current_linear_v
             throttle = self.pid_throttle.step(error, dt)
-            brake = 0.0
+
+            if stop_a > self.brake_deadband:
+                a_add_on = self.accel_add_on(current_linear_v)
+                stop_a -= a_add_on
+                brake = max(0, stop_a)*self.vehicle_mass*self.wheel_radius
+            else:
+                brake = 0
+
+
             steer = self.yaw_controller.get_steering(goal_linear_v,
-                                                goal_angular_v,
-                                                current_linear_v)
+                                                        goal_angular_v,
+                                                        current_linear_v)
+
         return throttle, brake, steer
+
+
+    def accel_add_on(self, current_linear_v):
+        #M and B were calculated by fitting a polynomial to data collected
+        #by speeding ego up to high spped and then tracking delta v and dt
+        #when applying no throttle or brake. On flat ground, the car in the simulator
+        #decelerates linearly with respect to speed with no throttle or speed.
+        return M*current_linear_v + B
