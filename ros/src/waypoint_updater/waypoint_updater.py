@@ -202,7 +202,7 @@ class WaypointUpdater(object):
         for i in range(1, len(waypoints)):
             wp0 = waypoints[i-1].pose.pose.position
             wp1 = waypoints[i].pose.pose.position
-            cur_v =  max(0, cur_v - 2*a*dl(wp0, wp1))
+            cur_v =  math.sqrt(max(0, cur_v*cur_v - 2*a*dl(wp0, wp1)))
             self.set_waypoint_velocity(waypoints, i, 0)
         #in addition to waypoints, return a to publish to twist_controller.py
         return a, waypoints
