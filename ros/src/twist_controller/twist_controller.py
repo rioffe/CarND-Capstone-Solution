@@ -19,7 +19,7 @@ class Controller(object):
         self.vehicle_mass = vehicle_mass
         self.fuel_capacity = fuel_capacity
         self.brake_deadband = brake_deadband
-        self.decel_limit = -1*decel_limit
+        self.decel_limit = -decel_limit
         self.accel_limit = accel_limit
         self.wheel_radius = wheel_radius
         #self.wheel_base = wheel_base
@@ -55,15 +55,15 @@ class Controller(object):
 
 
             steer = self.yaw_controller.get_steering(goal_linear_v,
-                                                        goal_angular_v,
-                                                        current_linear_v)
+                                                     goal_angular_v,
+                                                     current_linear_v)
 
         return throttle, brake, steer
 
 
     def accel_add_on(self, current_linear_v):
-        #M and B were calculated by fitting a polynomial to data collected
-        #by speeding ego up to high spped and then tracking delta v and dt
-        #when applying no throttle or brake. On flat ground, the car in the simulator
-        #decelerates linearly with respect to speed with no throttle or speed.
+        # M and B were calculated by fitting a polynomial to data collected
+        # by speeding ego up to high speed and then tracking delta v and dt
+        # when applying no throttle or brake. On flat ground, the car in the simulator
+        # decelerates linearly with respect to speed with no throttle or speed.
         return M*current_linear_v + B

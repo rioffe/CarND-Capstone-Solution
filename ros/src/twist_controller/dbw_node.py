@@ -66,7 +66,6 @@ class DBWNode(object):
         self.brake_pub = rospy.Publisher('/vehicle/brake_cmd',
                                          BrakeCmd, queue_size=1)
 
-        # TODO: Create `Controller` object
         self.controller = Controller(self.dbw_enabled,
                                     vehicle_mass, fuel_capacity,
                                     brake_deadband, decel_limit,
@@ -74,11 +73,10 @@ class DBWNode(object):
                                     wheel_base, steer_ratio,
                                     max_lat_accel, max_steer_angle)
 
-        # TODO: Subscribe to all the topics you need to
         rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
         rospy.Subscriber('/twist_cmd', TwistStamped, self.twist_cb)
         rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_cb)
-        rospy.Subscriber('stop_a', Float32, self.stopa_cb)
+        rospy.Subscriber('/stop_a', Float32, self.stopa_cb)
 
         self.loop()
 
@@ -103,7 +101,6 @@ class DBWNode(object):
     def loop(self):
         rate = rospy.Rate(50) # 50Hz
         while not rospy.is_shutdown():
-            # TODO: Get predicted throttle, brake, and steering using `twist_controller`
             if self.prev_time != -1:
                 cur_time = time.time()
                 self.dt = cur_time - self.prev_time
@@ -113,11 +110,11 @@ class DBWNode(object):
 
             if self.dbw_enabled:
                 throttle, brake, steer = self.controller.control(self.dbw_enabled,
-                                                                    self.goal_linear_v,
-                                                                    self.goal_angular_v,
-                                                                    self.stop_a,
-                                                                    self.current_linear_v,
-                                                                    self.dt)
+                                                                 self.goal_linear_v,
+                                                                 self.goal_angular_v,
+                                                                 self.stop_a,
+                                                                 self.current_linear_v,
+                                                                 self.dt)
                 self.publish(throttle, brake, steer)
 
             rate.sleep()

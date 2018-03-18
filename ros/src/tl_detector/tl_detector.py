@@ -13,7 +13,7 @@ import yaml
 import math
 import numpy as np
 
-#for now state is ground truth, so no need to have a cnt threshold
+# For now state is ground truth, so no need to have a cnt threshold
 STATE_COUNT_THRESHOLD = 0
 
 class TLDetector(object):
@@ -26,13 +26,13 @@ class TLDetector(object):
         self.lights = None
 
         self.pose_wp_idx = None
-        self.tl_wp_idx = [] #waypoing indices of traffic lights
-        self.tl_xy = [] #stop line positions of traffic lights
+        self.tl_wp_idx = [] # Waypoint indices of traffic lights
+        self.tl_xy = [] # Stop line positions of traffic lights
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-        #add closest waypoint subscriber to receive current closest waypoint from waypoint WaypointUpdater
-        sub3 = rospy.Subscriber('/closest_waypoint', Int32, self.closest_cb)
+        # Add closest waypoint subscriber to receive current closest waypoint from waypoint WaypointUpdater
+        sub4 = rospy.Subscriber('/closest_waypoint', Int32, self.closest_cb)
 
         '''
         /vehicle/traffic_lights provides you with the location of the traffic light in 3D map space and
@@ -66,7 +66,7 @@ class TLDetector(object):
     def waypoints_cb(self, waypoints):
         self.waypoints = waypoints.waypoints
         N = len(self.waypoints)
-        #waypoints are only loaded once so at boot find closest waypoint idx of each traffic light stop line
+        # Waypoints are only loaded once so at boot find closest waypoint idx of each traffic light stop line
         for x, y in self.config['stop_line_positions']:
             ds = []
             [ds.append(math.sqrt((x-self.waypoints[i].pose.pose.position.x)**2 + (y-self.waypoints[i].pose.pose.position.y)**2)) for i in range(N)]
@@ -77,17 +77,15 @@ class TLDetector(object):
     def closest_cb(self, msg):
         self.pose_wp_idx = msg.data
 
-        #Every time waypoint updater finds new closest waypoint, re-calculate location
-        #of nearest stop line, waypoint closest to nearest stop line, and state of nearest light
+        # Every time waypoint updater finds new closest waypoint, re-calculate location
+        # of nearest stop line, waypoint closest to nearest stop line, and state of nearest light
         closest_tl_xy, light_wp, state = self.process_traffic_lights()
 
-        if state == TrafficLight.RED or state == TrafficLight.YELLOW:
-                light_wp = light_wp
-        else:
+        if state != TrafficLight.RED and state != TrafficLight.YELLOW:
             light_wp = -1
             self.last_wp = light_wp
 
-        #publish nearest waypoint and x-y coords of stop line so waypoint updater can slow if necessary
+        # Publish nearest waypoint and x-y coords of stop line so waypoint updater can slow if necessary
         red_light_pub = Float32MultiArray()
         red_light_pub.data = [light_wp, closest_tl_xy[0], closest_tl_xy[1]]
         self.upcoming_red_light_pub.publish(red_light_pub)
@@ -154,7 +152,7 @@ class TLDetector(object):
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
-        #Get classification
+        # Get classification
         return self.light_classifier.get_classification(cv_image)
 
     def process_traffic_lights(self):
@@ -162,7 +160,7 @@ class TLDetector(object):
             location and color
 
         Returns:
-            int: index of waypoint closes to the upcoming stop line for a traffic light (-1 if none exists)
+            int: index of waypoint closest to the upcoming stop line for a traffic light (-1 if none exists)
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
             list (float): x,y coordinates of nearest traffic light stopline
 
@@ -170,7 +168,7 @@ class TLDetector(object):
         light = None
         closest_tl_wp_idx = 0
 
-        #This assumes ego always travels around loop in start direction. Should be fixed to use Yuri's calculation from waypoint_updater.py.
+        # This assumes ego always travels around loop in start direction. Should be fixed to use Yuri's calculation from waypoint_updater.py.
         if(self.pose_wp_idx):
             closest_tl_wp_idx = min(self.tl_wp_idx)
             closest_tl_xy = self.tl_xy[np.argmin(self.tl_wp_idx)]
@@ -180,8 +178,8 @@ class TLDetector(object):
                     closest_tl_xy = self.tl_xy[i]
                     break
 
-        #We now have x,y position of stopline of closest traffic light.
-        #Initially, rather than use camera img and classifier, we can get gound truth state of that light from the simulator.
+        # We now have x,y position of stopline of closest traffic light.
+        # Initially, rather than use camera img and classifier, we can get gound truth state of that light from the simulator.
         stop_x = closest_tl_xy[0]
         stop_y = closest_tl_xy[1]
         state = TrafficLight.UNKNOWN

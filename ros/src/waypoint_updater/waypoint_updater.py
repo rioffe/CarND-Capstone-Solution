@@ -25,9 +25,9 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
 LOOKAHEAD_WPS = 50 # Number of waypoints we will publish. You can change this number
-MIN_LOOKAHEAD_DIST = 10 #Min distance away in meters for red light to trigger slow down (this is a safety measure in case of latency)
-COMFORT_DECEL = 3 #max deceleration value (expects a positve number)
-TARGET_V = 40*1609.34/60/60 #first number is mph followed by conversion to mps
+MIN_LOOKAHEAD_DIST = 10 # Min distance away in meters for red light to trigger slow down (this is a safety measure in case of latency)
+COMFORT_DECEL = 3 # Max deceleration value (expects a positve number)
+TARGET_V = 40*1609.34/60/60 # first number is mph followed by conversion to mps
 
 class WaypointUpdater(object):
     def __init__(self):
@@ -40,35 +40,34 @@ class WaypointUpdater(object):
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
         rospy.Subscriber('/traffic_waypoint', Float32MultiArray, self.traffic_cb)
 
-        #publish closest waypoint so tl_dector.py doesn't have to repeat calculation
+        # Publish closest waypoint so tl_dector.py doesn't have to repeat calculation
         self.closest_waypoint_pub = rospy.Publisher('/closest_waypoint', Int32, queue_size=1)
-        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
-        #if a red stop light hsa been detected within a distance based on current speed
-        #that allows enough time for a comfortable deceleration, then we publish it
-        #so that it doesn't have to be re-calculated in twist_controller.py, where it
-        #is used to calculate torque in Newton meters to control braking
-        self.stop_a_pub = rospy.Publisher('stop_a', Float32, queue_size=1)
+        self.final_waypoints_pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
+        
+        # If a red stop light hsa been detected within a distance based on current speed
+        # that allows enough time for a comfortable deceleration, then we publish it
+        # so that it doesn't have to be re-calculated in twist_controller.py, where it
+        # is used to calculate torque in Newton meters to control braking
+        self.stop_a_pub = rospy.Publisher('/stop_a', Float32, queue_size=1)
 
         # TODO: Add other member variables you need below
         self.vehicle_position = None
         self.vehicle_yaw = None
         self.waypoints = None
-        #previous closest waypoint idx to ego
+        # Previous closest waypoint idx to ego
         self.prev_idx = None
-        #ego's current velocity
+        # Ego's current velocity
         self.v = 0
 
-        #stop waypoint closest to nearest upcoming traffic light as published by tl_detector.py
+        # Stop waypoint closest to nearest upcoming traffic light as published by tl_detector.py
         self.stop_waypoint = -1
-        #x-y position of stop line closest to nearest upcoming traffic light as published by tl_detector.py
+        # x-y position of stop line closest to nearest upcoming traffic light as published by tl_detector.py
         self.stop_x = -1
         self.stop_y = -1
-
 
         rospy.spin()
 
     def pose_cb(self, msg):
-        # TODO: Implement
         rospy.loginfo("pose_cb is called")
 
         self.vehicle_position = msg.pose.position
@@ -81,38 +80,34 @@ class WaypointUpdater(object):
     def handle_final_waypoints(self):
         rospy.loginfo("handle_final_waypoints")
 
-        if not self.waypoints:
+        if not self.waypoints or not self.vehicle_position or not self.vehicle_yaw:
             return
 
-        if not self.vehicle_position or not self.vehicle_yaw:
-            return
-
-        next_wp = self.next_waypoint(self.waypoints,
-            self.vehicle_position, self.vehicle_yaw)
+        next_wp = self.next_waypoint(self.waypoints, self.vehicle_position, self.vehicle_yaw)
 
         final_waypoints = islice(cycle(self.waypoints), next_wp, next_wp + LOOKAHEAD_WPS + 1)
 
-        #stop waypoint = -1 if tl_detector.py sees no traffic light or nearest upcoming traffic light is green
+        # stop waypoint = -1 if tl_detector.py sees no traffic light or nearest upcoming traffic light is green
         if self.stop_waypoint != -1:
             stop_dist = self.distance(self.waypoints, next_wp, self.stop_waypoint)
 
-            #time and distance it will take to stop decelerating comfortably at current v
+            # Time and distance it will take to stop decelerating comfortably at current v
             lookahead_t = self.v / COMFORT_DECEL
             lookahead_dist = 0.5*COMFORT_DECEL*lookahead_t*lookahead_t
 
-            #MIN_LOOKAHEAD_DIST is a buffer of 10m, so no matter the speed ego will slow down for red lights <= 10m away
+            # MIN_LOOKAHEAD_DIST is a buffer of 10m, so no matter the speed ego will slow down for red lights <= 10m away
             if stop_dist <= max(MIN_LOOKAHEAD_DIST, lookahead_dist):
                 stop_a, pub_waypoints = self.generate_stop_trajectory(list(final_waypoints), stop_dist)
 
-            #if red light is too far away for relevance, brake=-1 causing a brake value of 0 in twist_controller.py
-            #ego maintains TARGET_V
+            # if red light is too far away for relevance, brake=-1 causing a brake value of 0 in twist_controller.py
+            # ego maintains TARGET_V
             else:
                 pub_waypoints = list(final_waypoints)
                 [self.set_waypoint_velocity(pub_waypoints, i, TARGET_V) for i in range(len(pub_waypoints))]
                 stop_a = -1
 
-        #if no light in view or green light, brake=-1 causing a brake value of 0 in twist_controller.py
-        #ego maintains TARGET_V
+        # if no light in view or green light, brake=-1 causing a brake value of 0 in twist_controller.py
+        # ego maintains TARGET_V
         else:
             pub_waypoints = list(final_waypoints)
             [self.set_waypoint_velocity(pub_waypoints, i, TARGET_V) for i in range(len(pub_waypoints))]
@@ -124,16 +119,16 @@ class WaypointUpdater(object):
 
         lane.waypoints = pub_waypoints
         self.final_waypoints_pub.publish(lane)
-        #publish stop acceleration for twist_controller.py
+        # Publish stop acceleration for twist_controller.py
         self.stop_a_pub.publish(Float32(stop_a))
 
     def closest_waypoint(self, waypoints, position):
+        rospy.loginfo("closes_waypoint")
         idx = -1
-        min_distance = 100000
         dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
 
-        #Only search through all waypoints if we haven't yet found a closest waypoint,
-        #otherwise only loop through waypoints up to LOOKAHEAD_WPS ahead of prev idx
+        # Only search through all waypoints if we haven't yet found a closest waypoint,
+        # otherwise only loop through waypoints up to LOOKAHEAD_WPS ahead of prev idx
         ds = []
         N = len(self.waypoints)
         if self.prev_idx is None:
@@ -161,7 +156,6 @@ class WaypointUpdater(object):
         return wp_idx
 
     def waypoints_cb(self, waypoints):
-        # TODO: Implement
         rospy.loginfo("waypoints_cb is called")
         self.waypoints = waypoints.waypoints
         self.handle_final_waypoints()
@@ -181,30 +175,30 @@ class WaypointUpdater(object):
         pass
 
     def generate_stop_trajectory(self, waypoints, stop_dist):
-        #stop_dist is distance to wp closest to red light, ~3-5m past where ego should stop_a_pub
-        #if dist to stop line (i.e., not wp nearest stop line) is less than 3m, stop acceleration
-        #is set to 1m/s^2. Besides ensuring that ego stops at or before stop line,this ensures
-        #that ego remains still, rather than drift forward when goal_v = 0.
+        # stop_dist is distance to wp closest to red light, ~3-5m past where ego should stop_a_pub
+        # if dist to stop line (i.e., not wp nearest stop line) is less than 3m, stop acceleration
+        # is set to 1m/s^2. Besides ensuring that ego stops at or before stop line,this ensures
+        # that ego remains still, rather than drift forward when goal_v = 0.
         stop_line_dist = math.sqrt((self.vehicle_position.x-self.stop_x)**2 + (self.vehicle_position.y-self.stop_y)**2)
         if stop_line_dist < 3:
             a = 1
         else:
-            #calculate time and acceleration needed to stop before redlight at current v
+            # calculate time and acceleration needed to stop before redlight at current v
             t = (2*stop_dist) / (self.v)
             a = self.v / max(0.001, t)
         dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2)
-        #set first waypoint v as current ego v
+        # Set first waypoint v as current ego v
         cur_v = self.v
         self.set_waypoint_velocity(waypoints, 0, cur_v)
 
-        #using acceleration calculated above, decrease velocity of following waypoints_cb
-        #so ego will reach 0 by red light
+        # Using acceleration calculated above, decrease velocity of following waypoints_cb
+        # so ego will reach 0 by red light
         for i in range(1, len(waypoints)):
             wp0 = waypoints[i-1].pose.pose.position
             wp1 = waypoints[i].pose.pose.position
             cur_v =  math.sqrt(max(0, cur_v*cur_v - 2*a*dl(wp0, wp1)))
             self.set_waypoint_velocity(waypoints, i, 0)
-        #in addition to waypoints, return a to publish to twist_controller.py
+        # In addition to waypoints, return a to publish to twist_controller.py
         return a, waypoints
 
     def get_waypoint_velocity(self, waypoint):
