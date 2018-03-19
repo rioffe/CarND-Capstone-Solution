@@ -6,8 +6,8 @@ import csv
 
 GAS_DENSITY = 2.858
 ONE_MPH = 0.44704
-M = 0.09826218
-B = 0.04509728
+M = 0.09949492
+B = -0.05454824
 
 class Controller(object):
     def __init__(self, dbw_enabled,
