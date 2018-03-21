@@ -1,4 +1,5 @@
 from yaw_controller import YawController
+from lowpass import LowPassFilter
 from pid import PID
 import rospy
 import math
@@ -31,14 +32,21 @@ class Controller(object):
         self.yaw_controller = YawController(wheel_base, steer_ratio,
                                             min_speed, max_lat_accel,
                                             max_steer_angle)
+        self.lowpass = LowPassFilter(3, 1)
+
         kp = 0.5
-        ki = 1.0
-        kd = 0.1
+        ki = 0.0
+        kd = 0.4
         self.pid_throttle = PID(kp, ki, kd, mn=0, mx=accel_limit)
+
+        kp_s = 15.0
+        ki_s = 0.0
+        kd_s = 0.3
+        self.pid_steer = PID(kp_s, ki_s, kd_s, mn = -max_steer_angle, mx = max_steer_angle)
 
         self.steer_data = []
 
-    def control(self, dbw_enabled, goal_linear_v, goal_angular_v, stop_a, current_linear_v, dt):
+    def control(self, dbw_enabled, goal_linear_v, goal_angular_v, stop_a, current_linear_v, current_angular_v, dt):
         if not dbw_enabled:
             self.pid_throttle.reset()
 
@@ -53,10 +61,11 @@ class Controller(object):
             else:
                 brake = 0
 
-
-            steer = self.yaw_controller.get_steering(goal_linear_v,
-                                                     goal_angular_v,
-                                                     current_linear_v)
+            error_a = goal_angular_v - current_angular_v; 
+            steer = self.lowpass.filt(self.pid_steer.step(error_a, dt))
+            #steer = self.yaw_controller.get_steering(goal_linear_v,
+            #                                         goal_angular_v,
+            #                                         current_linear_v)
 
         return throttle, brake, steer
 

@@ -114,6 +114,7 @@ class DBWNode(object):
                                                                  self.goal_angular_v,
                                                                  self.stop_a,
                                                                  self.current_linear_v,
+                                                                 self.current_angular_v,
                                                                  self.dt)
                 self.publish(throttle, brake, steer)
 
