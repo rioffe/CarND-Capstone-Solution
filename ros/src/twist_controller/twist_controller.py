@@ -1,5 +1,5 @@
 from yaw_controller import YawController
-from lowpass import LowPassFilter
+from lowpass import LowPassFilter4, LowPassFilter8
 from pid import PID
 import rospy
 import math
@@ -32,16 +32,18 @@ class Controller(object):
         self.yaw_controller = YawController(wheel_base, steer_ratio,
                                             min_speed, max_lat_accel,
                                             max_steer_angle)
-        self.lowpass = LowPassFilter(3, 1)
+        self.lowpass = LowPassFilter8(1., 1., 1., 1., 1., 1., 1., 1.)
+        self.lowpass2 = LowPassFilter8(1., 1., 1., 1., 1., 1., 1., 1.)
+        self.lowpass3 = LowPassFilter8(1., 1., 1., 1., 1., 1., 1., 1.)
 
-        kp = 0.5
-        ki = 0.0
+        kp = 2.8
+        ki = 0.1
         kd = 0.4
         self.pid_throttle = PID(kp, ki, kd, mn=0, mx=accel_limit)
 
-        kp_s = 15.0
+        kp_s = 29.7
         ki_s = 0.0
-        kd_s = 0.3
+        kd_s = 0.75
         self.pid_steer = PID(kp_s, ki_s, kd_s, mn = -max_steer_angle, mx = max_steer_angle)
 
         self.steer_data = []
@@ -52,12 +54,12 @@ class Controller(object):
 
         else:
             error = goal_linear_v - current_linear_v
-            throttle = self.pid_throttle.step(error, dt)
+            throttle = self.lowpass2.filt(self.pid_throttle.step(error, dt))
 
             if stop_a > self.brake_deadband:
                 a_add_on = self.accel_add_on(current_linear_v)
                 stop_a -= a_add_on
-                brake = max(0, stop_a)*self.vehicle_mass*self.wheel_radius
+                brake = self.lowpass3.filt(max(0, stop_a)*self.vehicle_mass*self.wheel_radius)
             else:
                 brake = 0
 
