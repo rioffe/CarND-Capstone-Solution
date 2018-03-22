@@ -43,7 +43,7 @@ class WaypointUpdater(object):
         # Publish closest waypoint so tl_dector.py doesn't have to repeat calculation
         self.closest_waypoint_pub = rospy.Publisher('/closest_waypoint', Int32, queue_size=1)
         self.final_waypoints_pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
-        
+
         # If a red stop light hsa been detected within a distance based on current speed
         # that allows enough time for a comfortable deceleration, then we publish it
         # so that it doesn't have to be re-calculated in twist_controller.py, where it
@@ -102,16 +102,18 @@ class WaypointUpdater(object):
             # if red light is too far away for relevance, brake=-1 causing a brake value of 0 in twist_controller.py
             # ego maintains TARGET_V
             else:
-                pub_waypoints = list(final_waypoints)
-                [self.set_waypoint_velocity(pub_waypoints, i, TARGET_V) for i in range(len(pub_waypoints))]
+                #pub_waypoints = list(final_waypoints)
+                #[self.set_waypoint_velocity(pub_waypoints, i, TARGET_V) for i in range(len(pub_waypoints))]
                 stop_a = -1
+                pub_waypoints = self.generate_keep_trajectory(list(final_waypoints))
 
         # if no light in view or green light, brake=-1 causing a brake value of 0 in twist_controller.py
         # ego maintains TARGET_V
         else:
-            pub_waypoints = list(final_waypoints)
-            [self.set_waypoint_velocity(pub_waypoints, i, TARGET_V) for i in range(len(pub_waypoints))]
+            #pub_waypoints = list(final_waypoints)
+            #[self.set_waypoint_velocity(pub_waypoints, i, TARGET_V) for i in range(len(pub_waypoints))]
             stop_a = -1
+            pub_waypoints = self.generate_keep_trajectory(list(final_waypoints))
 
         lane = Lane()
         lane.header.frame_id = '/World'
@@ -174,6 +176,22 @@ class WaypointUpdater(object):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later
         pass
 
+
+    def generate_keep_trajectory(self, waypoints):
+        stop_line_dist = math.sqrt((self.vehicle_position.x-self.stop_x)**2 + (self.vehicle_position.y-self.stop_y)**2)
+        a = 5
+        dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2)
+        cur_v = self.v
+
+        for i in range(len(waypoints)):
+            wp0 = waypoints[i-1].pose.pose.position
+            wp1 = waypoints[i].pose.pose.position
+            cur_v = min(TARGET_V, math.sqrt(cur_v*cur_v + 2*a*dl(wp0, wp1)))
+            self.set_waypoint_velocity(waypoints, i, cur_v)
+
+        return waypoints
+
+
     def generate_stop_trajectory(self, waypoints, stop_dist):
         # stop_dist is distance to wp closest to red light, ~3-5m past where ego should stop_a_pub
         # if dist to stop line (i.e., not wp nearest stop line) is less than 3m, stop acceleration
@@ -185,19 +203,18 @@ class WaypointUpdater(object):
         else:
             # calculate time and acceleration needed to stop before redlight at current v
             t = (2*stop_dist) / (self.v)
-            a = self.v / max(0.001, t)
+            a = min(COMFORT_DECEL, self.v / max(0.001, t))
         dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2)
-        # Set first waypoint v as current ego v
+        # Set current ego v
         cur_v = self.v
-        self.set_waypoint_velocity(waypoints, 0, cur_v)
 
         # Using acceleration calculated above, decrease velocity of following waypoints_cb
         # so ego will reach 0 by red light
-        for i in range(1, len(waypoints)):
+        for i in range(len(waypoints)):
             wp0 = waypoints[i-1].pose.pose.position
             wp1 = waypoints[i].pose.pose.position
             cur_v =  math.sqrt(max(0, cur_v*cur_v - 2*a*dl(wp0, wp1)))
-            self.set_waypoint_velocity(waypoints, i, 0)
+            self.set_waypoint_velocity(waypoints, i, cur_v)
         # In addition to waypoints, return a to publish to twist_controller.py
         return a, waypoints
 

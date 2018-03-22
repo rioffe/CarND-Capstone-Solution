@@ -1,5 +1,6 @@
 from yaw_controller import YawController
 from pid import PID
+from lowpass import LowPassFilter8
 import rospy
 import math
 import csv
@@ -33,30 +34,42 @@ class Controller(object):
                                             max_steer_angle)
         kp = 0.5
         ki = 1.0
-        kd = 0.1
+        kd = 0.0
         self.pid_throttle = PID(kp, ki, kd, mn=0, mx=accel_limit)
 
-        self.steer_data = []
+        self.lowpass_a = LowPassFilter8(1., 1., 1., 1., 1., 1., 1., 1.)
+        self.lowpass_clv = LowPassFilter8(1., 1., 1., 1., 1., 1., 1., 1.)
 
     def control(self, dbw_enabled, goal_linear_v, goal_angular_v, stop_a, current_linear_v, dt):
         if not dbw_enabled:
             self.pid_throttle.reset()
 
-        else:
-            error = goal_linear_v - current_linear_v
-            throttle = self.pid_throttle.step(error, dt)
+            self.lowpass_a.reset()
+            self.lowpass_clv.reset()
 
+        else:
             if stop_a > self.brake_deadband:
+                current_linear_v = self.lowpass_clv.filt(current_linear_v)
+                stop_a = self.lowpass_a.filt(stop_a)
                 a_add_on = self.accel_add_on(current_linear_v)
                 stop_a -= a_add_on
                 brake = max(0, stop_a)*self.vehicle_mass*self.wheel_radius
+                throttle = 0
             else:
+                self.lowpass_a.reset()
+                self.lowpass_clv.reset()
                 brake = 0
+                error = goal_linear_v - current_linear_v
+                throttle = self.pid_throttle.step(error, dt)
 
+            if goal_linear_v < 0.01 and current_linear_v < 0.01:
+                steer = 0
 
-            steer = self.yaw_controller.get_steering(goal_linear_v,
-                                                     goal_angular_v,
-                                                     current_linear_v)
+            else:
+                steer = self.yaw_controller.get_steering(goal_linear_v,
+                                                         goal_angular_v,
+                                                         current_linear_v)
+
 
         return throttle, brake, steer
 
