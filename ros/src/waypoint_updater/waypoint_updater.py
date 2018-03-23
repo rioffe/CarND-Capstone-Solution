@@ -27,6 +27,7 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 LOOKAHEAD_WPS = 50 # Number of waypoints we will publish. You can change this number
 MIN_LOOKAHEAD_DIST = 10 # Min distance away in meters for red light to trigger slow down (this is a safety measure in case of latency)
 COMFORT_DECEL = 3 # Max deceleration value (expects a positve number)
+COMFORT_ACCEL = 5 # Max acceleration value (expects a positve number)
 TARGET_V = 40*1609.34/60/60 # first number is mph followed by conversion to mps
 
 class WaypointUpdater(object):
@@ -88,6 +89,7 @@ class WaypointUpdater(object):
         final_waypoints = islice(cycle(self.waypoints), next_wp, next_wp + LOOKAHEAD_WPS + 1)
 
         # stop waypoint = -1 if tl_detector.py sees no traffic light or nearest upcoming traffic light is green
+        stop_a = -1
         if self.stop_waypoint != -1:
             stop_dist = self.distance(self.waypoints, next_wp, self.stop_waypoint)
 
@@ -102,17 +104,11 @@ class WaypointUpdater(object):
             # if red light is too far away for relevance, brake=-1 causing a brake value of 0 in twist_controller.py
             # ego maintains TARGET_V
             else:
-                #pub_waypoints = list(final_waypoints)
-                #[self.set_waypoint_velocity(pub_waypoints, i, TARGET_V) for i in range(len(pub_waypoints))]
-                stop_a = -1
                 pub_waypoints = self.generate_keep_trajectory(list(final_waypoints))
 
         # if no light in view or green light, brake=-1 causing a brake value of 0 in twist_controller.py
         # ego maintains TARGET_V
         else:
-            #pub_waypoints = list(final_waypoints)
-            #[self.set_waypoint_velocity(pub_waypoints, i, TARGET_V) for i in range(len(pub_waypoints))]
-            stop_a = -1
             pub_waypoints = self.generate_keep_trajectory(list(final_waypoints))
 
         lane = Lane()
@@ -178,8 +174,7 @@ class WaypointUpdater(object):
 
 
     def generate_keep_trajectory(self, waypoints):
-        stop_line_dist = math.sqrt((self.vehicle_position.x-self.stop_x)**2 + (self.vehicle_position.y-self.stop_y)**2)
-        a = 5
+        a = COMFORT_ACCEL
         dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2)
         cur_v = self.v
 
