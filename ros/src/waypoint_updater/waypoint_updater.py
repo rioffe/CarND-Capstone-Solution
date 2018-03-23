@@ -36,6 +36,7 @@ class WaypointUpdater(object):
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        rospy.Subscriber('/target_v', Float32, self.targetv_cb)
         rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
@@ -61,6 +62,7 @@ class WaypointUpdater(object):
         self.prev_idx = None
         # Ego's current velocity
         self.v = 0
+        self.TARGET_V = 0
 
         # Stop waypoint closest to nearest upcoming traffic light as published by tl_detector.py
         self.stop_waypoint = -1
@@ -162,8 +164,12 @@ class WaypointUpdater(object):
     def waypoints_cb(self, waypoints):
         rospy.loginfo("waypoints_cb is called")
         self.waypoints = waypoints.waypoints
-        self.TARGET_V = self.waypoints[0].twist.twist.linear.x
         self.handle_final_waypoints()
+
+    def targetv_cb(self, msg):
+        self.TARGET_V = msg.data
+        #unblock below to set TARGET_V manually here
+        #self.TARGET_V = 35*1609.34/60/60 # first number is mph followed by conversion to mps
 
     def velocity_cb(self, msg):
         rospy.loginfo("velocity_cb is called")
@@ -254,4 +260,3 @@ if __name__ == '__main__':
         WaypointUpdater()
     except rospy.ROSInterruptException:
         rospy.logerr('Could not start waypoint updater node.')
-        
