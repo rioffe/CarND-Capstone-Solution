@@ -169,9 +169,9 @@ class TLDetector(object):
         closest_tl_wp_idx = 0
 
         # This assumes ego always travels around loop in start direction. Should be fixed to use Yuri's calculation from waypoint_updater.py.
+        closest_tl_wp_idx = min(self.tl_wp_idx)
+        closest_tl_xy = self.tl_xy[np.argmin(self.tl_wp_idx)]
         if(self.pose_wp_idx):
-            closest_tl_wp_idx = min(self.tl_wp_idx)
-            closest_tl_xy = self.tl_xy[np.argmin(self.tl_wp_idx)]
             for i in range(len(self.tl_wp_idx)):
                 if self.tl_wp_idx[i] > self.pose_wp_idx:
                     closest_tl_wp_idx = self.tl_wp_idx[i]
@@ -179,7 +179,7 @@ class TLDetector(object):
                     break
 
         # We now have x,y position of stopline of closest traffic light.
-        # Initially, rather than use camera img and classifier, we can get gound truth state of that light from the simulator.
+        # Initially, rather than use camera img and classifier, we can get ground truth state of that light from the simulator.
         stop_x = closest_tl_xy[0]
         stop_y = closest_tl_xy[1]
         state = TrafficLight.UNKNOWN

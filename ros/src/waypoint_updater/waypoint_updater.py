@@ -121,7 +121,7 @@ class WaypointUpdater(object):
         self.stop_a_pub.publish(Float32(stop_a))
 
     def closest_waypoint(self, waypoints, position):
-        rospy.loginfo("closes_waypoint")
+        rospy.loginfo("closest_waypoint")
         idx = -1
         dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
 
@@ -172,7 +172,6 @@ class WaypointUpdater(object):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later
         pass
 
-
     def generate_keep_trajectory(self, waypoints):
         a = COMFORT_ACCEL
         dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2)
@@ -185,7 +184,6 @@ class WaypointUpdater(object):
             self.set_waypoint_velocity(waypoints, i, cur_v)
 
         return waypoints
-
 
     def generate_stop_trajectory(self, waypoints, stop_dist):
         # stop_dist is distance to wp closest to red light, ~3-5m past where ego should stop_a_pub
