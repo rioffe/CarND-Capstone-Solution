@@ -2,7 +2,7 @@
 
 import rospy
 import tf
-from std_msgs.msg import Int32, Float32, Float32MultiArray
+from std_msgs.msg import Int32, Float32, Float32MultiArray, Bool
 from geometry_msgs.msg import PoseStamped, TwistStamped
 from styx_msgs.msg import Lane, Waypoint
 from itertools import cycle, islice
@@ -28,7 +28,7 @@ LOOKAHEAD_WPS = 50 # Number of waypoints we will publish. You can change this nu
 MIN_LOOKAHEAD_DIST = 10 # Min distance away in meters for red light to trigger slow down (this is a safety measure in case of latency)
 COMFORT_DECEL = 3 # Max deceleration value (expects a positve number)
 COMFORT_ACCEL = 5 # Max acceleration value (expects a positve number)
-TARGET_V = 40*1609.34/60/60 # first number is mph followed by conversion to mps
+#TARGET_V = 40*1609.34/60/60 # first number is mph followed by conversion to mps
 
 class WaypointUpdater(object):
     def __init__(self):
@@ -36,10 +36,13 @@ class WaypointUpdater(object):
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        rospy.Subscriber('/target_v', Float32, self.targetv_cb)
         rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
         rospy.Subscriber('/traffic_waypoint', Float32MultiArray, self.traffic_cb)
+        #Add dbw enabled so closest waypoint finder can reset
+        rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_cb)
 
         # Publish closest waypoint so tl_dector.py doesn't have to repeat calculation
         self.closest_waypoint_pub = rospy.Publisher('/closest_waypoint', Int32, queue_size=1)
@@ -59,12 +62,15 @@ class WaypointUpdater(object):
         self.prev_idx = None
         # Ego's current velocity
         self.v = 0
+        self.TARGET_V = 0
 
         # Stop waypoint closest to nearest upcoming traffic light as published by tl_detector.py
         self.stop_waypoint = -1
         # x-y position of stop line closest to nearest upcoming traffic light as published by tl_detector.py
         self.stop_x = -1
         self.stop_y = -1
+
+        self.dbw_enabled = False
 
         rospy.spin()
 
@@ -89,7 +95,7 @@ class WaypointUpdater(object):
         final_waypoints = islice(cycle(self.waypoints), next_wp, next_wp + LOOKAHEAD_WPS + 1)
 
         # stop waypoint = -1 if tl_detector.py sees no traffic light or nearest upcoming traffic light is green
-        stop_a = -1
+
         if self.stop_waypoint != -1:
             stop_dist = self.distance(self.waypoints, next_wp, self.stop_waypoint)
 
@@ -104,11 +110,13 @@ class WaypointUpdater(object):
             # if red light is too far away for relevance, brake=-1 causing a brake value of 0 in twist_controller.py
             # ego maintains TARGET_V
             else:
+                stop_a = -1
                 pub_waypoints = self.generate_keep_trajectory(list(final_waypoints))
 
         # if no light in view or green light, brake=-1 causing a brake value of 0 in twist_controller.py
         # ego maintains TARGET_V
         else:
+            stop_a = -1
             pub_waypoints = self.generate_keep_trajectory(list(final_waypoints))
 
         lane = Lane()
@@ -158,6 +166,11 @@ class WaypointUpdater(object):
         self.waypoints = waypoints.waypoints
         self.handle_final_waypoints()
 
+    def targetv_cb(self, msg):
+        self.TARGET_V = msg.data
+        #unblock below to set TARGET_V manually here
+        #self.TARGET_V = 35*1609.34/60/60 # first number is mph followed by conversion to mps
+
     def velocity_cb(self, msg):
         rospy.loginfo("velocity_cb is called")
         self.v = msg.twist.linear.x
@@ -172,6 +185,13 @@ class WaypointUpdater(object):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later
         pass
 
+    def dbw_cb(self, msg):
+        rospy.loginfo("dbw_cb is called")
+        self.dbw_enabled = msg.data
+        #every time we switch from manual to autonomous, the prev_idx resets,
+        #allowing to manually turn the car around and still find the closest waypoint
+        self.prev_idx = None
+
     def generate_keep_trajectory(self, waypoints):
         a = COMFORT_ACCEL
         dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2)
@@ -180,7 +200,7 @@ class WaypointUpdater(object):
         for i in range(len(waypoints)):
             wp0 = waypoints[i-1].pose.pose.position
             wp1 = waypoints[i].pose.pose.position
-            cur_v = min(TARGET_V, math.sqrt(cur_v*cur_v + 2*a*dl(wp0, wp1)))
+            cur_v = min(self.TARGET_V, math.sqrt(cur_v*cur_v + 2*a*dl(wp0, wp1)))
             self.set_waypoint_velocity(waypoints, i, cur_v)
 
         return waypoints
@@ -218,11 +238,20 @@ class WaypointUpdater(object):
         waypoints[waypoint].twist.twist.linear.x = velocity
 
     def distance(self, waypoints, wp1, wp2):
+        N = len(waypoints)
         dist = 0
         dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
-        for i in range(wp1, wp2+1):
-            dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
-            wp1 = i
+
+        if wp2 >= wp1:
+            for i in range(wp1, wp2+1):
+                dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
+                wp1 = i
+        else:
+            for i in range(wp1, N):
+                dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
+                wp1 = i
+            for j in range(wp2):
+                dist += dl(waypoints[j].pose.pose.position, waypoints[j+1].pose.pose.position)
         return dist
 
 

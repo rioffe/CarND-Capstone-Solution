@@ -6,6 +6,7 @@ import math
 
 from geometry_msgs.msg import Quaternion
 
+from std_msgs.msg import Float32
 from styx_msgs.msg import Lane, Waypoint
 
 import tf
@@ -21,6 +22,7 @@ class WaypointLoader(object):
         rospy.init_node('waypoint_loader', log_level=rospy.DEBUG)
 
         self.pub = rospy.Publisher('/base_waypoints', Lane, queue_size=1, latch=True)
+        self.target_v_pub = rospy.Publisher('/target_v', Float32, queue_size=1)
 
         self.velocity = self.kmph2mps(rospy.get_param('~velocity'))
         self.new_waypoint_loader(rospy.get_param('~path'))
@@ -77,6 +79,7 @@ class WaypointLoader(object):
         lane.header.stamp = rospy.Time(0)
         lane.waypoints = waypoints
         self.pub.publish(lane)
+        self.target_v_pub.publish(Float32(self.velocity))
 
 
 if __name__ == '__main__':

@@ -55,7 +55,6 @@ class TLDetector(object):
 
         self.state = TrafficLight.UNKNOWN
         self.last_state = TrafficLight.UNKNOWN
-        self.last_wp = -1
         self.state_count = 0
 
         rospy.spin()
@@ -67,12 +66,14 @@ class TLDetector(object):
         self.waypoints = waypoints.waypoints
         N = len(self.waypoints)
         # Waypoints are only loaded once so at boot find closest waypoint idx of each traffic light stop line
+
         for x, y in self.config['stop_line_positions']:
             ds = []
             [ds.append(math.sqrt((x-self.waypoints[i].pose.pose.position.x)**2 + (y-self.waypoints[i].pose.pose.position.y)**2)) for i in range(N)]
             best_idx = np.argmin(ds)
             self.tl_wp_idx.append(best_idx)
             self.tl_xy.append([x, y])
+
 
     def closest_cb(self, msg):
         self.pose_wp_idx = msg.data
@@ -81,9 +82,8 @@ class TLDetector(object):
         # of nearest stop line, waypoint closest to nearest stop line, and state of nearest light
         closest_tl_xy, light_wp, state = self.process_traffic_lights()
 
-        if state != TrafficLight.RED and state != TrafficLight.YELLOW:
+        if state == TrafficLight.GREEN:
             light_wp = -1
-            self.last_wp = light_wp
 
         # Publish nearest waypoint and x-y coords of stop line so waypoint updater can slow if necessary
         red_light_pub = Float32MultiArray()
