@@ -164,7 +164,6 @@ class WaypointUpdater(object):
     def waypoints_cb(self, waypoints):
         rospy.loginfo("waypoints_cb is called")
         self.waypoints = waypoints.waypoints
-        self.TARGET_V = self.waypoints[0].twist.twist.linear.x
         self.handle_final_waypoints()
 
     def targetv_cb(self, msg):
@@ -261,4 +260,3 @@ if __name__ == '__main__':
         WaypointUpdater()
     except rospy.ROSInterruptException:
         rospy.logerr('Could not start waypoint updater node.')
-        
