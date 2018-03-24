@@ -23,4 +23,11 @@ tensorboard --logdir models/ssd_4
 ```
 
 ## How to export trained model for inference
-TODO
+```
+# From tensorflow/models/research/
+python object_detection/export_inference_graph.py \
+    --input_type image_tensor \
+    --pipeline_config_path ${PIPELINE_CONFIG_PATH} \
+    --trained_checkpoint_prefix ${TRAIN_PATH} \
+    --output_directory output_inference_graph.pb
+```
