@@ -71,6 +71,7 @@ pip install -r requirements.txt
 ```
 3. Make and run styx
 ```bash
+./model_extraction.sh
 cd ros
 catkin_make
 source devel/setup.sh
