@@ -48,7 +48,7 @@ class WaypointUpdater(object):
         self.closest_waypoint_pub = rospy.Publisher('/closest_waypoint', Int32, queue_size=1)
         self.final_waypoints_pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
 
-        # If a red stop light hsa been detected within a distance based on current speed
+        # If a red stop light has been detected within a distance based on current speed
         # that allows enough time for a comfortable deceleration, then we publish it
         # so that it doesn't have to be re-calculated in twist_controller.py, where it
         # is used to calculate torque in Newton meters to control braking
@@ -167,6 +167,7 @@ class WaypointUpdater(object):
         self.handle_final_waypoints()
 
     def targetv_cb(self, msg):
+        rospy.loginfo("targetv_cb is called")
         self.TARGET_V = msg.data
         #unblock below to set TARGET_V manually here
         #self.TARGET_V = 35*1609.34/60/60 # first number is mph followed by conversion to mps
@@ -188,8 +189,8 @@ class WaypointUpdater(object):
     def dbw_cb(self, msg):
         rospy.loginfo("dbw_cb is called")
         self.dbw_enabled = msg.data
-        #every time we switch from manual to autonomous, the prev_idx resets,
-        #allowing to manually turn the car around and still find the closest waypoint
+        # Every time we switch from manual to autonomous, the prev_idx resets,
+        # allowing to manually turn the car around and still find the closest waypoint
         self.prev_idx = None
 
     def generate_keep_trajectory(self, waypoints):
@@ -243,15 +244,13 @@ class WaypointUpdater(object):
         dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
 
         if wp2 >= wp1:
-            for i in range(wp1, wp2+1):
-                dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
-                wp1 = i
+            for i in range(wp1, wp2):
+                dist += dl(waypoints[i].pose.pose.position, waypoints[i+1].pose.pose.position)
         else:
-            for i in range(wp1, N):
-                dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
-                wp1 = i
-            for j in range(wp2):
-                dist += dl(waypoints[j].pose.pose.position, waypoints[j+1].pose.pose.position)
+            for i in range(wp1, N-1):
+                dist += dl(waypoints[i].pose.pose.position, waypoints[i+1].pose.pose.position)
+            for i in range(wp2):
+                dist += dl(waypoints[i].pose.pose.position, waypoints[i+1].pose.pose.position)
         return dist
 
 
