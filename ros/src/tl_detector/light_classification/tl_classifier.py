@@ -50,7 +50,15 @@ def _main(_):
 
     classifier = TLClassifier(model_path)
 
-    print classifier.get_classification(image_np)
+    classification = classifier.get_classification(image_np)
+    if (classification == 0):
+      print("RED")
+    elif (classification == 1): 
+      print("YELLOW")
+    elif (classification == 2):
+      print("GREEN")
+    else:
+      print("UNKNOWN")
 
 if __name__ == '__main__':
     flags = tf.app.flags

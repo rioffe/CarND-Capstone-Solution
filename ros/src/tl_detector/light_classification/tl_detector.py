@@ -152,7 +152,7 @@ def _main(_):
     detector = TLDetector(model_path)
     output_dict = detector.run_inference_for_single_image(image_np)
 
-    # print output_dict
+    print(output_dict)
     # Visualization of the results of a detection.
     _visualize_boxes_and_labels_on_image(
             image_np,
