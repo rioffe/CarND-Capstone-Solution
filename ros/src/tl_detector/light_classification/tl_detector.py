@@ -33,6 +33,27 @@ class TLDetector(object):
         self.image_tensor = self.detection_graph.get_tensor_by_name('image_tensor:0')
 
 
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        config.gpu_options.per_process_gpu_memory_fraction = 0.4
+
+        self.detection_session = tf.Session(graph=self.detection_graph, config=config)
+
+        # Get handles to input and output tensors
+        ops = self.detection_graph.get_operations()
+        all_tensor_names = {output.name for op in ops for output in op.outputs}
+        self.tensor_dict = {}
+        for key in [
+            'num_detections', 'detection_boxes', 'detection_scores', 'detection_classes'
+        ]:
+            tensor_name = key + ':0'
+            if tensor_name in all_tensor_names:
+                self.tensor_dict[key] = self.detection_graph.get_tensor_by_name(
+                        tensor_name)
+
+        self.image_tensor = self.detection_graph.get_tensor_by_name('image_tensor:0')
+
+
     def run_inference_for_single_image(self, image):
         # Run inference
         output_dict = self.detection_session.run(self.tensor_dict,

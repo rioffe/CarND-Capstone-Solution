@@ -24,6 +24,7 @@ class TLDetector(object):
         self.waypoints = None
         self.camera_image = None
         self.lights = None
+        self.has_image = False # we don't have image yet
 
         self.pose_wp_idx = None
         self.tl_wp_idx = [] # Waypoint indices of traffic lights
@@ -74,21 +75,8 @@ class TLDetector(object):
             self.tl_wp_idx.append(best_idx)
             self.tl_xy.append([x, y])
 
-
     def closest_cb(self, msg):
         self.pose_wp_idx = msg.data
-
-        # Every time waypoint updater finds new closest waypoint, re-calculate location
-        # of nearest stop line, waypoint closest to nearest stop line, and state of nearest light
-        closest_tl_xy, light_wp, state = self.process_traffic_lights()
-
-        if state == TrafficLight.GREEN:
-            light_wp = -1
-
-        # Publish nearest waypoint and x-y coords of stop line so waypoint updater can slow if necessary
-        red_light_pub = Float32MultiArray()
-        red_light_pub.data = [light_wp, closest_tl_xy[0], closest_tl_xy[1]]
-        self.upcoming_red_light_pub.publish(red_light_pub)
 
     def traffic_cb(self, msg):
         self.lights = msg.lights
@@ -101,9 +89,16 @@ class TLDetector(object):
             msg (Image): image from car-mounted camera
 
         """
+        #rospy.loginfo("image_cb is called")
         self.has_image = True
         self.camera_image = msg
-        #light_wp, state = self.process_traffic_lights()
+        
+        # Every time waypoint updater finds new closest waypoint, re-calculate location
+        # of nearest stop line, waypoint closest to nearest stop line, and state of nearest light
+        closest_tl_xy, light_wp, state = self.process_traffic_lights()
+
+        if state == TrafficLight.GREEN:
+            light_wp = -1
 
         '''
         Publish upcoming red lights at camera frequency.
@@ -111,6 +106,11 @@ class TLDetector(object):
         of times till we start using it. Otherwise the previous stable state is
         used.
         '''
+        # Publish nearest waypoint and x-y coords of stop line so waypoint updater can slow if necessary
+        red_light_pub = Float32MultiArray()
+        red_light_pub.data = [light_wp, closest_tl_xy[0], closest_tl_xy[1]]
+        self.upcoming_red_light_pub.publish(red_light_pub)
+
         #if self.state != state:
         #    self.state_count = 0
         #    self.state = state
@@ -152,8 +152,10 @@ class TLDetector(object):
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
+        image = np.asanyarray(cv_image)
+
         # Get classification
-        return self.light_classifier.get_classification(cv_image)
+        return self.light_classifier.get_classification(image)
 
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its
@@ -165,7 +167,6 @@ class TLDetector(object):
             list (float): x,y coordinates of nearest traffic light stopline
 
         """
-        light = None
         closest_tl_wp_idx = 0
 
         # This assumes ego always travels around loop in start direction. Should be fixed to use Yuri's calculation from waypoint_updater.py.
@@ -187,7 +188,17 @@ class TLDetector(object):
             n_lights = len(self.lights)
             ds = []
             [ds.append(math.sqrt((stop_x - self.lights[i].pose.pose.position.x)**2 + (stop_y - self.lights[i].pose.pose.position.y)**2)) for i in range(n_lights)]
-            state = self.lights[np.argmin(ds)].state
+            #state = self.lights[np.argmin(ds)].state
+            state = self.get_light_state(self.lights[np.argmin(ds)])
+            if (state == 0):
+              state_s = "RED"
+            elif (state == 1): 
+              state_s = "YELLOW"
+            elif (state == 2):
+              state_s = "GREEN"
+            else:
+              state_s = "UNKNOWN"
+            #rospy.loginfo('state is {}'.format(state_s))
 
         return closest_tl_xy, closest_tl_wp_idx, state
 
