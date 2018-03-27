@@ -89,10 +89,9 @@ class TLDetector(object):
             msg (Image): image from car-mounted camera
 
         """
-        rospy.loginfo("image_cb is called")
+        #rospy.loginfo("image_cb is called")
         self.has_image = True
         self.camera_image = msg
-        #light_wp, state = self.process_traffic_lights()
         
         # Every time waypoint updater finds new closest waypoint, re-calculate location
         # of nearest stop line, waypoint closest to nearest stop line, and state of nearest light
@@ -191,7 +190,15 @@ class TLDetector(object):
             [ds.append(math.sqrt((stop_x - self.lights[i].pose.pose.position.x)**2 + (stop_y - self.lights[i].pose.pose.position.y)**2)) for i in range(n_lights)]
             #state = self.lights[np.argmin(ds)].state
             state = self.get_light_state(self.lights[np.argmin(ds)])
-            rospy.loginfo('state is {}'.format(state))
+            if (state == 0):
+              state_s = "RED"
+            elif (state == 1): 
+              state_s = "YELLOW"
+            elif (state == 2):
+              state_s = "GREEN"
+            else:
+              state_s = "UNKNOWN"
+            #rospy.loginfo('state is {}'.format(state_s))
 
         return closest_tl_xy, closest_tl_wp_idx, state
 

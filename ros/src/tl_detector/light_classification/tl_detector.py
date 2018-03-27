@@ -16,33 +16,38 @@ class TLDetector(object):
                 serialized_graph = fid.read()
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
-        self.sess = tf.Session(graph=self.detection_graph)
 
-    def run_inference_for_single_image(self, image):
-        with self.detection_graph.as_default():
-            # Get handles to input and output tensors
-            ops = tf.get_default_graph().get_operations()
-            all_tensor_names = {output.name for op in ops for output in op.outputs}
-            tensor_dict = {}
-            for key in [
-                'num_detections', 'detection_boxes', 'detection_scores', 'detection_classes'
-            ]:
-                tensor_name = key + ':0'
-                if tensor_name in all_tensor_names:
-                    tensor_dict[key] = tf.get_default_graph().get_tensor_by_name(
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        config.gpu_options.per_process_gpu_memory_fraction = 0.4
+
+        self.detection_session = tf.Session(graph=self.detection_graph, config=config)
+
+        # Get handles to input and output tensors
+        ops = self.detection_graph.get_operations()
+        all_tensor_names = {output.name for op in ops for output in op.outputs}
+        self.tensor_dict = {}
+        for key in [
+            'num_detections', 'detection_boxes', 'detection_scores', 'detection_classes'
+        ]:
+            tensor_name = key + ':0'
+            if tensor_name in all_tensor_names:
+                self.tensor_dict[key] = self.detection_graph.get_tensor_by_name(
                         tensor_name)
 
-            image_tensor = tf.get_default_graph().get_tensor_by_name('image_tensor:0')
+        self.image_tensor = self.detection_graph.get_tensor_by_name('image_tensor:0')
 
-            # Run inference
-            output_dict = self.sess.run(tensor_dict,
-                                    feed_dict={image_tensor: np.expand_dims(image, 0)})
 
-            # all outputs are float32 numpy arrays, so convert types as appropriate
-            output_dict['num_detections'] = int(output_dict['num_detections'][0])
-            output_dict['detection_classes'] = output_dict['detection_classes'][0].astype(np.uint8)
-            output_dict['detection_boxes'] = output_dict['detection_boxes'][0]
-            output_dict['detection_scores'] = output_dict['detection_scores'][0]
+    def run_inference_for_single_image(self, image):
+        # Run inference
+        output_dict = self.detection_session.run(self.tensor_dict,
+                feed_dict={self.image_tensor: np.expand_dims(image, 0)})
+
+        # all outputs are float32 numpy arrays, so convert types as appropriate
+        output_dict['num_detections'] = int(output_dict['num_detections'][0])
+        output_dict['detection_classes'] = output_dict['detection_classes'][0].astype(np.uint8)
+        output_dict['detection_boxes'] = output_dict['detection_boxes'][0]
+        output_dict['detection_scores'] = output_dict['detection_scores'][0]
         return output_dict
 
 
@@ -152,7 +157,7 @@ def _main(_):
     detector = TLDetector(model_path)
     output_dict = detector.run_inference_for_single_image(image_np)
 
-    print(output_dict)
+    # print output_dict
     # Visualization of the results of a detection.
     _visualize_boxes_and_labels_on_image(
             image_np,
