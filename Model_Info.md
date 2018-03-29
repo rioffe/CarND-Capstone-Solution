@@ -3,9 +3,9 @@ This document provides an overview of all the models Our team used to classify t
 
 
 [//]: # (Image References)
-[image1]: ./imgs/real1.PNG
-[image2]: ./imgs/real2.PNG
-[image3]: ./imgs/real3.PNG
+[image1]: ./imgs/real1.png
+[image2]: ./imgs/real2.png
+[image3]: ./imgs/real3.png
 [image4]: ./imgs/sim1.png
 
 ## List of Models
