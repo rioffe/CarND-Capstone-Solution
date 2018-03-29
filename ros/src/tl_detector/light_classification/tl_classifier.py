@@ -8,6 +8,10 @@ import numpy as np
 
 class TLClassifier(object):
     def __init__(self, model_path='light_classification/models/ssd_sim_and_real_24_03_2018'):
+    #def __init__(self, model_path='light_classification/models/frozen_sim_inception13'):
+    #def __init__(self, model_path='light_classification/models/frozen_real_inception13'):
+    #def __init__(self, model_path='light_classification/models/frozen_faster_rcnn_sim_v2'):
+    #def __init__(self, model_path='light_classification/models/frozen_faster_rcnn_reallife_v2'):
         self.detector = TLDetector(model_path)
 
     def get_classification(self, image):
