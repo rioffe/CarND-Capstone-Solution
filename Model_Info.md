@@ -21,7 +21,7 @@ This model is optimized to classify simulator images. This model is based on [Fa
 epochs : 10000
 learning rate : 0.0003
 
-![alt text][image1]{:height="36px" width="36px"} | ![alt text][image2]{:height="36px" width="36px"} | ![alt text][image3]{:height="36px" width="36px"}
+![alt text][image1]{:height="10px" width="10px"} | ![alt text][image2]{:height="10px" width="10px"} | ![alt text][image3]{:height="10px" width="10px"}
 
 ### faster_rcnn_reallife
 This model is optimized to classify reallife traffic light images. This model is based on [Faster R-CNN Resnet 101](https://papers.nips.cc/paper/5638-faster-r-cnn-towards-real-time-object-detection-with-region-proposal-networks.pdf) model architecture and created using TensorFlow's Object Detection API. Model is first trained using [Bosch Small traffic Light Data set](https://hci.iwr.uni-heidelberg.de/node/6132) and then fine tuned for a hand annotated set of images from the Udacity test track.
