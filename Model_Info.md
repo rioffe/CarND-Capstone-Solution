@@ -1,6 +1,13 @@
 # Traffic Light Classifier Models 
 This document provides an overview of all the models Our team used to classify traffic lights.
 
+
+[//]: # (Image References)
+[image1]: ./imgs/real1.PNG
+[image2]: ./imgs/real2.PNG
+[image3]: ./imgs/real3.PNG
+[image4]: ./imgs/sim1.png
+
 ## List of Models
 1. faster_rcnn_sim
 2. faster_rcnn_reallife
@@ -13,6 +20,8 @@ This model is optimized to classify simulator images. This model is based on [Fa
 #### Model Params:
 epochs : 10000
 learning rate : 0.0003
+
+![alt text][image1] | ![alt text][image2] | ![alt text][image3]
 
 ### faster_rcnn_reallife
 This model is optimized to classify reallife traffic light images. This model is based on [Faster R-CNN Resnet 101](https://papers.nips.cc/paper/5638-faster-r-cnn-towards-real-time-object-detection-with-region-proposal-networks.pdf) model architecture and created using TensorFlow's Object Detection API. Model is first trained using [Bosch Small traffic Light Data set](https://hci.iwr.uni-heidelberg.de/node/6132) and then fine tuned for a hand annotated set of images from the Udacity test track.
