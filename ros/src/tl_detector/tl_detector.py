@@ -198,7 +198,7 @@ class TLDetector(object):
               state_s = "GREEN"
             else:
               state_s = "UNKNOWN"
-            #rospy.loginfo('state is {}'.format(state_s))
+            rospy.loginfo('state is {}'.format(state_s))
 
         return closest_tl_xy, closest_tl_wp_idx, state
 
