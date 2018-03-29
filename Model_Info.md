@@ -29,4 +29,4 @@ This model is optimized to classify reallife traffic light images. This model is
 epochs : 10000
 learning rate : 0.0003
 
-
+![alt text][image4]
