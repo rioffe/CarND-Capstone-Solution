@@ -2,13 +2,13 @@ import tensorflow as tf
 import yaml
 import os
 from object_detection.utils import dataset_util
+from PIL import Image  # uses pillow
 
 
 flags = tf.app.flags
-flags.DEFINE_string('output_tfrecord', '', 'Path to output TFRecord')
-flags.DEFINE_string('output_label_map', '', 'Path to output label map')
-flags.DEFINE_string('config_file', '', 'Path to yaml config file')
-flags.DEFINE_string('relative_data_path', '', 'Path to date, e.g. rgb/test for bosch test, used instead path from yaml')
+flags.DEFINE_string('output_tfrecord', 'output.tfrecord', 'Path to output TFRecord')
+flags.DEFINE_string('output_label_map', 'output_label_map.pbtxt', 'Path to output label map')
+flags.DEFINE_string('config_files', '', 'Paths to yaml config file')
 
 FLAGS = flags.FLAGS
 
@@ -37,13 +37,30 @@ LABEL_DICT =  {
     "RedStraightRight" : 14
     }
 
-def create_tf_example(example, width, height):
+def create_tf_example(example):
     filename = example['path'].encode() # Filename of the image. Empty if image is not from file
 
     with tf.gfile.GFile(example['path'], 'rb') as fid:
         encoded_image_data = fid.read()
 
-    image_format = 'png'
+    im = Image.open(example['path'])
+    print im.size
+    width = im.size[0]
+    height = im.size[1]
+
+    xmin='xmin'
+    ymin='ymin'
+    x_width='x_width'
+    y_height='y_height'
+    #todo: use file extension
+    image_format = 'jpg'
+
+    if example['annotations'] and example['annotations'][0].get('width'):
+        xmin='x'
+        ymin='y'
+        x_width='width'
+        y_height='height'
+
 
     xmins = [] # List of normalized left x coordinates in bounding box (1 per box)
     xmaxs = [] # List of normalized right x coordinates in bounding box
@@ -60,10 +77,10 @@ def create_tf_example(example, width, height):
 
         #if box['occluded'] is False:
 
-        xmins.append(float(box['xmin']) / width)
-        xmaxs.append(float(box['xmin'] + box['x_width'])  / width)
-        ymins.append(float(box['ymin']) / height)
-        ymaxs.append(float(box['ymin'] + box['y_height']) / height)
+        xmins.append(float(box[xmin]) / width)
+        xmaxs.append(float(box[xmin] + box[x_width])  / width)
+        ymins.append(float(box[ymin]) / height)
+        ymaxs.append(float(box[ymin] + box[y_height]) / height)
 #	classes_text.append('light'.encode())
 #	classes.append(1)
         classes_text.append(box['class'].encode())
@@ -93,34 +110,27 @@ def create_tf_example(example, width, height):
 def main(_):
     writer = tf.python_io.TFRecordWriter(FLAGS.output_tfrecord)
 
-    config = FLAGS.config_file
+    config_files = FLAGS.config_files.split(':')
 
-    examples = yaml.load(open(config, 'rb').read())
+    for config in config_files:
+        print("handle {}".format(config))
 
-    total = len(examples)
-    print("Total examples: {}".format(total))
+        examples = yaml.load(open(config, 'rb').read())
 
-    for i,ex in enumerate(examples):
-	if not FLAGS.relative_data_path:
+        total = len(examples)
+        print("Total examples: {}".format(total))
+
+        for i,ex in enumerate(examples):
             examples[i]['path'] = os.path.abspath(os.path.join(
-                 os.path.dirname(config), ex['filename']))
-        else:
-            examples[i]['path'] = os.path.abspath(os.path.join(
-                 os.path.dirname(config), FLAGS.relative_data_path,
-                 os.path.basename(ex['filename'])))
+                os.path.dirname(config), ex['filename']))
 
-    for i, ex in enumerate(examples):
-        width = 1368
-        height = 1096
-        if 'sim_data_capture' in ex['filename']:
-            width = 800
-            height = 600
-        tf_example = create_tf_example(ex, width, height)
-	if tf_example:
-            writer.write(tf_example.SerializeToString())
+        for i, ex in enumerate(examples):
+            tf_example = create_tf_example(ex)
+            if tf_example:
+                writer.write(tf_example.SerializeToString())
 
-        if i % 100 == 0:
-            print("Percents processed: {}".format((float(i) / total) * 100))
+            if i % 100 == 0:
+                print("Percents processed: {}".format((float(i) / total) * 100))
 
     writer.close()
 
