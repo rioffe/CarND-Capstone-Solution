@@ -42,6 +42,13 @@ This model is optimized to classify reallife traffic light images. This model is
 epochs : 10000
 learning rate : 0.0003
 
+#### Loss Graph
+![alt text][image5] 
+
+#### Few Inference Images
+
+![alt text][image1] | ![alt text][image2] | ![alt text][image3]
+
 ### ssd_inception_v2_coco_sim
 This model is designed to classify simulator images. This model is based on [SSD inception v2](https://arxiv.org/pdf/1502.03167) model architecture and created using TensorFlow's object detection API. It is trained using a hand annotated set of images from the Udacity Simulator.
 #### Model params:
