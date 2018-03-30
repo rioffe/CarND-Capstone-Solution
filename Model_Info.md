@@ -63,11 +63,3 @@ epochs : 5000
 learning rate : 0.004
 ![alt text][image_ssd_reallife]
 
-
-#### Loss Graph
-![alt text][image5] 
-
-#### Few Inference Images
-
-![alt text][image1] | ![alt text][image2] | ![alt text][image3]
-
