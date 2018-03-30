@@ -157,6 +157,18 @@ class TLDetector(object):
         # Get classification
         return self.light_classifier.get_classification(image)
 
+    def get_state_string(self, state):
+        if (state == 0):
+            state_s = "RED"
+        elif (state == 1):
+            state_s = "YELLOW"
+        elif (state == 2):
+            state_s = "GREEN"
+        else:
+            state_s = "UNKNOWN"
+
+        return state_s
+
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its
             location and color
@@ -188,17 +200,11 @@ class TLDetector(object):
             n_lights = len(self.lights)
             ds = []
             [ds.append(math.sqrt((stop_x - self.lights[i].pose.pose.position.x)**2 + (stop_y - self.lights[i].pose.pose.position.y)**2)) for i in range(n_lights)]
-            #state = self.lights[np.argmin(ds)].state
+            groundtruth = self.lights[np.argmin(ds)].state
+            rospy.loginfo('groundtruth is {}'.format(self.get_state_string(groundtruth)))
+            
             state = self.get_light_state(self.lights[np.argmin(ds)])
-            if (state == 0):
-              state_s = "RED"
-            elif (state == 1): 
-              state_s = "YELLOW"
-            elif (state == 2):
-              state_s = "GREEN"
-            else:
-              state_s = "UNKNOWN"
-            rospy.loginfo('state is {}'.format(state_s))
+            rospy.loginfo('state is {}'.format(self.get_state_string(state)))
 
         return closest_tl_xy, closest_tl_wp_idx, state
 
