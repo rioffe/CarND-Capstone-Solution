@@ -1,11 +1,16 @@
 # Traffic Light Classifier Models 
 This document provides an overview of all the models Our team used to classify traffic lights.
 
+[//]: # (Image References)
+[image_ssd_sim]: ./imgs/ssd_inception_simul.JPG "Classification using SSD Inception V2 over Simulation data"
+[image_ssd_reallife]: ./imgs/ssd_inception_reallife.JPG "Classification using SSD Inception V2 over Reallife data"
+
+
 ## List of Models
 1. faster_rcnn_sim
 2. faster_rcnn_reallife
-3. 
-4.
+3. ssd_inception_v2_coco_sim
+4. ssd_inception_v2_coco_reallife
 
 ## Model Details
 ### faster_rcnn_sim
@@ -19,5 +24,20 @@ This model is optimized to classify reallife traffic light images. This model is
 #### Model Params:
 epochs : 10000
 learning rate : 0.0003
+
+### ssd_inception_v2_coco_sim
+This model is designed to classify simulator images. This model is based on [SSD inception v2](https://arxiv.org/pdf/1502.03167) model architecture and created using TensorFlow's object detection API. It is trained using a hand annotated set of images from the Udacity Simulator.
+#### Model params:
+epochs : 5000
+learning rate : 0.004 
+![alt text][image_ssd_sim]
+
+### ssd_inception_v2_coco_reallife
+This model is designed to classify reallife traffic light images. This model is based on [SSD inception v2](https://arxiv.org/pdf/1502.03167) model architecture and created using TensorFlow's object detection API. It is trained using a hand annotated set of images from the Udacity test track.
+#### Model params:
+epochs : 5000
+learning rate : 0.004
+![alt text][image_ssd_reallife]
+
 
 
