@@ -26,7 +26,8 @@ learning rate : 0.0003
 #### Loss Graph
 ![alt text][image6] 
 
-Few Inference Images
+#### Few Inference Images
+
 ![alt text][image4]
 
 
@@ -39,6 +40,7 @@ learning rate : 0.0003
 #### Loss Graph
 ![alt text][image5] 
 
-Few Inference Images
+#### Few Inference Images
+
 ![alt text][image1] | ![alt text][image2] | ![alt text][image3]
 
