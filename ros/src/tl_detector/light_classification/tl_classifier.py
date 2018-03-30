@@ -11,14 +11,17 @@ class TLClassifier(object):
     #def __init__(self, model_path='light_classification/models/ssd_sim_and_real_24_03_2018'):
     #def __init__(self, model_path='light_classification/models/frozen_sim_inception13'):
     #def __init__(self, model_path='light_classification/models/frozen_real_inception13'):
-    def __init__(self, model_path='light_classification/models/frozen_faster_rcnn_sim_v2'):
+    def __init__(self, model_path='light_classification/models/frozen_faster_rcnn_sim_v2', isSimulator):
     #def __init__(self, model_path='light_classification/models/frozen_faster_rcnn_reallife_v2'):
         #self.detector = TLDetector(model_path)
-        self.detector1 = TLDetector('light_classification/models/ssd_sim_and_real_24_03_2018')
-        self.detector2 = TLDetector('light_classification/models/frozen_faster_rcnn_sim_v2')
-        #self.detector2 = TLDetector('light_classification/models/frozen_faster_rcnn_reallife_v2')
-        self.detector3 = TLDetector('light_classification/models/frozen_sim_inception13')
-        #self.detector3 = TLDetector('light_classification/models/frozen_real_inception13')
+	self.detector1 = TLDetector('light_classification/models/ssd_sim_and_real_24_03_2018')
+
+        if isSimulator:
+            self.detector2 = TLDetector('light_classification/models/frozen_faster_rcnn_sim_v2')
+            self.detector3 = TLDetector('light_classification/models/frozen_sim_inception13')
+        else:
+            self.detector2 = TLDetector('light_classification/models/frozen_faster_rcnn_reallife_v2')
+            self.detector3 = TLDetector('light_classification/models/frozen_real_inception13')
 
     def get_state_string(self, state):
         if (state == 0):
