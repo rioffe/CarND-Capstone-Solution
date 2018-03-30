@@ -7,6 +7,8 @@ This document provides an overview of all the models Our team used to classify t
 [image2]: ./imgs/real2.png
 [image3]: ./imgs/real3.png
 [image4]: ./imgs/sim1.png
+[image5]: ./imgs/Loss_sim.png
+[image6]: ./imgs/loss_real.png
 
 ## List of Models
 1. faster_rcnn_sim
