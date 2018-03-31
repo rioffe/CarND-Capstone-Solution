@@ -28,12 +28,12 @@ This document provides an overview of all the models Our team used to classify t
 [sim_red_30_03_2018]: ./imgs/ssd_sim_and_real_30_03_2018/sim_red.png
 
 ## List of Models
-1. faster_rcnn_sim
-2. faster_rcnn_reallife
-3. ssd_inception_v2_coco_sim
-4. ssd_inception_v2_coco_reallife
-5. ssd_sim_and_real_24_03_2018/ssd_inception_v2_coco
-6. ssd_sim_and_real_30_03_2018/ssd_inception_v2_coco
+1. **[faster_rcnn_sim](#faster_rcnn_sim)**<br>
+2. **[faster_rcnn_reallife](#faster_rcnn_reallife)**<br>
+3. **[ssd_inception_v2_coco_sim](#ssd_inception_v2_coco_sim)**<br>
+4. **[ssd_inception_v2_coco_reallife](#ssd_inception_v2_coco_reallife)**<br>
+5. **[ssd_sim_and_real_24_03_2018](#ssd_sim_and_real_24_03_2018-ssd_inception_v2_coco)**<br>
+6. **[ssd_sim_and_real_30_03_2018](#ssd_sim_and_real_30_03_2018-ssd_inception_v2_coco)**<br>
 
 ## Model Details
 ### faster_rcnn_sim
@@ -77,7 +77,7 @@ epochs : 5000
 learning rate : 0.004
 ![alt text][image_ssd_reallife]
 
-### ssd_sim_and_real_24_03_2018/ssd_inception_v2_coco
+### ssd_sim_and_real_24_03_2018 ssd_inception_v2_coco
 This model is designed to classify both reallife and simulator traffic light images. This model is based on [SSD inception v2](https://arxiv.org/pdf/1502.03167) model architecture and created using TensorFlow's object detection API. It is trained using a hand annotated set of images from [the Udacity test track](https://carnd.slack.com/files/U5FLANLA2/F9SMHKS6M/dataset-sdcnd-capstone.zip), as well as using [Bosch Small traffic Light Data set](https://hci.iwr.uni-heidelberg.de/node/6132)
 #### Model params:
 epochs : +30k
@@ -91,7 +91,7 @@ learning rate : 0.004
 <img src="./imgs/ssd_sim_and_real_24_03_2018/sim_red.png" height="480" width="640">
 <img src="./imgs/ssd_sim_and_real_24_03_2018/sim_green.png" height="480" width="640">
 
-### ssd_sim_and_real_30_03_2018/ssd_inception_v2_coco
+### ssd_sim_and_real_30_03_2018 ssd_inception_v2_coco
 This model is designed to classify both reallife and simulator traffic light images. This model is based on [SSD inception v2](https://arxiv.org/pdf/1502.03167) model architecture and created using TensorFlow's object detection API. It is trained using a hand annotated set of images from [the Udacity test track](https://carnd.slack.com/files/U5FLANLA2/F9SMHKS6M/dataset-sdcnd-capstone.zip), [Bosch Small traffic Light Data set](https://hci.iwr.uni-heidelberg.de/node/6132), as well as [hand annotated by sloth images](./data/traffic_light_bag_images_part1.tgz)
 #### Model params:
 epochs : +100k
