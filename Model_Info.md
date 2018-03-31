@@ -1,26 +1,19 @@
 # Traffic Light Classifier Models 
-This document provides an overview of all the models Our team used to classify traffic lights.
+This document provides an overview of all the models our team used to classify traffic lights.
 
 [//]: # (Image References)
-[image_ssd_sim]: ./imgs/ssd_inception_simul.JPG "Classification using SSD Inception V2 over Simulation data"
-[image_ssd_reallife]: ./imgs/ssd_inception_reallife.JPG "Classification using SSD Inception V2 over Reallife data"
-
-
-
-[//]: # (Image References)
+[image_ssd_sim]: ./imgs/ssd_inception_simul.JPG "Classification using SSD Inception V2 over simulation data"
+[image_ssd_reallife]: ./imgs/ssd_inception_reallife.JPG "Classification using SSD Inception V2 over real life data"
 [image1]: ./imgs/real1.png
 [image2]: ./imgs/real2.png
 [image3]: ./imgs/real3.png
 [image4]: ./imgs/sim1.png
 [image5]: ./imgs/Loss_real.png
 [image6]: ./imgs/loss_sim.png
-
-[//]: # (Image References)
 [loss_24_03_2018]: ./imgs/ssd_sim_and_real_24_03_2018/loss.png
 [real_red_24_03_2018]: ./imgs/ssd_sim_and_real_24_03_2018/reallife_red.png
 [sim_green_24_03_2018]: ./imgs/ssd_sim_and_real_24_03_2018/sim_green.png
 [sim_red_24_03_2018]: ./imgs/ssd_sim_and_real_24_03_2018/sim_red.png
-
 [loss_30_03_2018]: ./imgs/ssd_sim_and_real_30_03_2018/loss.png
 [real_red_30_03_2018]: ./imgs/ssd_sim_and_real_30_03_2018/reallife_red.png
 [real_green_30_03_2018]: ./imgs/ssd_sim_and_real_30_03_2018/reallife_green.png
@@ -28,12 +21,12 @@ This document provides an overview of all the models Our team used to classify t
 [sim_red_30_03_2018]: ./imgs/ssd_sim_and_real_30_03_2018/sim_red.png
 
 ## List of Models
-1. **[faster_rcnn_sim](#faster_rcnn_sim)**<br>
-2. **[faster_rcnn_reallife](#faster_rcnn_reallife)**<br>
-3. **[ssd_inception_v2_coco_sim](#ssd_inception_v2_coco_sim)**<br>
-4. **[ssd_inception_v2_coco_reallife](#ssd_inception_v2_coco_reallife)**<br>
-5. **[ssd_sim_and_real_24_03_2018](#ssd_sim_and_real_24_03_2018-ssd_inception_v2_coco)**<br>
-6. **[ssd_sim_and_real_30_03_2018](#ssd_sim_and_real_30_03_2018-ssd_inception_v2_coco)**<br>
+1. **[faster_rcnn_sim](#faster_rcnn_sim)**
+2. **[faster_rcnn_reallife](#faster_rcnn_reallife)**
+3. **[ssd_inception_v2_coco_sim](#ssd_inception_v2_coco_sim)**
+4. **[ssd_inception_v2_coco_reallife](#ssd_inception_v2_coco_reallife)**
+5. **[ssd_sim_and_real_24_03_2018](#ssd_sim_and_real_24_03_2018-ssd_inception_v2_coco)**
+6. **[ssd_sim_and_real_30_03_2018](#ssd_sim_and_real_30_03_2018-ssd_inception_v2_coco)**
 
 ## Model Details
 ### faster_rcnn_sim
