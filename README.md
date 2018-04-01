@@ -22,6 +22,15 @@ Please see [Contributing](./CONTRIBUTING.md) for detailed information.
 
 This is the project repo for the final project of the Udacity Self-Driving Car Nanodegree: Programming a Real Self-Driving Car. For more information about the project, see the project introduction [here](https://classroom.udacity.com/nanodegrees/nd013/parts/6047fe34-d93c-4f50-8336-b70ef10cb4b2/modules/e1a23b06-329a-4684-a717-ad476f0d8dff/lessons/462c933d-9f24-42d3-8bdc-a08a5fc866e4/concepts/5ab4b122-83e6-436d-850f-9f4d26627fd9).
 
+## Controllers
+
+We use PID controller with low pass filtering over current linear velocity and stop accelearation for acceleration/breaking and a Udacity provided YawController for steering. We experimented with the PID controller with low pass filtering for steering as well, but found YawController to perform better.
+
+## Traffic Light Detection and Recognition Models
+
+We developed several traffic light detection and recognition models. Detailed [information about our models](./Model_Info.md).
+We use three different models simultaneously to determine the color of the traffic lights (we use separate models for the simulation environment and separate models for the real environment - one of our models was trained on both real and simulated images and is uses for detection in both simulated and real environments).
+
 ## Final Project Video
 
 [![Udacity Lincoln MKZ driving in simulation using our controllers and light detection](http://img.youtube.com/vi/erSg0MA3vvo/0.jpg)](https://youtu.be/erSg0MA3vvo)
