@@ -15,6 +15,7 @@ class PID(object):
 
     def reset(self):
         self.int_val = 0.0
+        self.last_error = 0.0
 
     def step(self, error, sample_time):
 
