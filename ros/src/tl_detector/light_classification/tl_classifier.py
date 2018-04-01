@@ -8,20 +8,18 @@ from PIL import Image
 import numpy as np
 
 class TLClassifier(object):
-    #def __init__(self, model_path='light_classification/models/ssd_sim_and_real_24_03_2018'):
-    #def __init__(self, model_path='light_classification/models/frozen_sim_inception13'):
-    #def __init__(self, model_path='light_classification/models/frozen_real_inception13'):
-    def __init__(self, model_path='light_classification/models/frozen_faster_rcnn_sim_v2', isSimulator):
-    #def __init__(self, model_path='light_classification/models/frozen_faster_rcnn_reallife_v2'):
-        #self.detector = TLDetector(model_path)
-	self.detector1 = TLDetector('light_classification/models/ssd_sim_and_real_24_03_2018')
+    def __init__(self, model_path1='light_classification/models/ssd_sim_and_real_30_03_2018', 
+                       model_path2='light_classification/models/frozen_faster_rcnn_reallife_v2',
+                       model_path3='light_classification/models/frozen_real_inception13', isSimulator=False):
+        # Primary Model
+	self.detector1 = TLDetector(model_path1)
 
         if isSimulator:
             self.detector2 = TLDetector('light_classification/models/frozen_faster_rcnn_sim_v2')
             self.detector3 = TLDetector('light_classification/models/frozen_sim_inception13')
         else:
-            self.detector2 = TLDetector('light_classification/models/frozen_faster_rcnn_reallife_v2')
-            self.detector3 = TLDetector('light_classification/models/frozen_real_inception13')
+            self.detector2 = TLDetector(model_path2)
+            self.detector3 = TLDetector(model_path3)
 
     def get_state_string(self, state):
         if (state == 0):
@@ -77,9 +75,10 @@ class TLClassifier(object):
        
         classes = [tl_class1, tl_class2, tl_class3]
         scores  = [output_dict1['detection_scores'][0], output_dict2['detection_scores'][0], output_dict3['detection_scores'][0]] 
-        if (tl_class1 == tl_class2 or tl_class1 == tl_class3):
+        if ((tl_class1 == tl_class2 and output_dict1['detection_scores'][0] >= 0.4 and output_dict2['detection_scores'][0] >= 0.4) or 
+            (tl_class1 == tl_class3 and output_dict1['detection_scores'][0] >= 0.4 and output_dict3['detection_scores'][0] >= 0.4)):
             tl_class = tl_class1
-        elif (tl_class2 == tl_class3):
+        elif (tl_class2 == tl_class3 and output_dict2['detection_scores'][0] >= 0.4 and output_dict3['detection_scores'][0] >= 0.4):
             tl_class = tl_class2
         else:
             tl_class = classes[np.argmax(scores)]
@@ -87,32 +86,32 @@ class TLClassifier(object):
         return tl_class
 
 
-#Simple test
+# Simple test
 def _main(_):
     flags = tf.app.flags.FLAGS
     image_path = flags.input_image
-    model_path = flags.model_path
+    model_path1 = flags.model_path1
+    model_path2 = flags.model_path2
+    model_path3 = flags.model_path3
+    simulator = flags.simulator
 
     image = Image.open(image_path)
     # the array based representation of the image will be used later in order to prepare the
     # result image with boxes and labels on it.
     image_np = _load_image_into_numpy_array(image)
 
-    classifier = TLClassifier(model_path)
+    classifier = TLClassifier(model_path1, model_path2, model_path3, simulator)
 
     classification = classifier.get_classification(image_np)
-    if (classification == 0):
-      print("RED")
-    elif (classification == 1): 
-      print("YELLOW")
-    elif (classification == 2):
-      print("GREEN")
-    else:
-      print("UNKNOWN")
+    state_s = classifier.get_state_string(classification)
+    print(state_s)
 
 if __name__ == '__main__':
     flags = tf.app.flags
     flags.DEFINE_string('input_image', 'input/test.jpg', 'Path to input image')
-    flags.DEFINE_string('model_path', 'models/ssd_sim_and_real_24_03_2018', 'Path to output image')
+    flags.DEFINE_string('model_path1', 'models/ssd_sim_and_real_30_03_2018', 'Path to the first model')
+    flags.DEFINE_string('model_path2', 'models/frozen_faster_rcnn_reallife_v2', 'Path to the second model')
+    flags.DEFINE_string('model_path3', 'models/frozen_real_inception13', 'Path to the third model')
+    flags.DEFINE_bool('simulator', False, 'Whether image is coming from a simulator or not')
 
     tf.app.run(main=_main)
