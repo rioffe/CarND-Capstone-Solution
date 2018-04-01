@@ -51,7 +51,9 @@ class TLDetector(object):
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Float32MultiArray, queue_size=1)
 
         self.bridge = CvBridge()
-        self.light_classifier = TLClassifier()
+        self.use_simulator_classifier = rospy.get_param('~on_simulator')
+        rospy.loginfo("Is on simulator? %s" , self.use_simulator_classifier)
+        self.light_classifier = TLClassifier(isSimulator = self.use_simulator_classifier)
         self.listener = tf.TransformListener()
 
         self.state = TrafficLight.UNKNOWN
@@ -89,7 +91,6 @@ class TLDetector(object):
             msg (Image): image from car-mounted camera
 
         """
-        #rospy.loginfo("image_cb is called")
         self.has_image = True
         self.camera_image = msg
         
@@ -110,31 +111,6 @@ class TLDetector(object):
         red_light_pub = Float32MultiArray()
         red_light_pub.data = [light_wp, closest_tl_xy[0], closest_tl_xy[1]]
         self.upcoming_red_light_pub.publish(red_light_pub)
-
-        #if self.state != state:
-        #    self.state_count = 0
-        #    self.state = state
-        #elif self.state_count >= STATE_COUNT_THRESHOLD:
-        #    self.last_state = self.state
-        #    light_wp = light_wp if state == TrafficLight.RED else -1
-        #    self.last_wp = light_wp
-        #    self.upcoming_red_light_pub.publish(Int32(light_wp))
-        #else:
-        #    self.upcoming_red_light_pub.publish(Int32(self.last_wp))
-        #self.state_count += 1
-
-    def get_closest_waypoint(self, pose):
-        """Identifies the closest path waypoint to the given position
-            https://en.wikipedia.org/wiki/Closest_pair_of_points_problem
-        Args:
-            pose (Pose): position to match a waypoint to
-
-        Returns:
-            int: index of the closest waypoint in self.waypoints
-
-        """
-        #TODO implement
-        return 0
 
     def get_light_state(self, light):
         """Determines the current color of the traffic light
@@ -157,6 +133,18 @@ class TLDetector(object):
         # Get classification
         return self.light_classifier.get_classification(image)
 
+    def get_state_string(self, state):
+        if (state == 0):
+            state_s = "RED"
+        elif (state == 1):
+            state_s = "YELLOW"
+        elif (state == 2):
+            state_s = "GREEN"
+        else:
+            state_s = "UNKNOWN"
+
+        return state_s
+
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its
             location and color
@@ -172,7 +160,7 @@ class TLDetector(object):
         # This assumes ego always travels around loop in start direction. Should be fixed to use Yuri's calculation from waypoint_updater.py.
         closest_tl_wp_idx = min(self.tl_wp_idx)
         closest_tl_xy = self.tl_xy[np.argmin(self.tl_wp_idx)]
-        if(self.pose_wp_idx):
+        if (self.pose_wp_idx):
             for i in range(len(self.tl_wp_idx)):
                 if self.tl_wp_idx[i] > self.pose_wp_idx:
                     closest_tl_wp_idx = self.tl_wp_idx[i]
@@ -188,17 +176,12 @@ class TLDetector(object):
             n_lights = len(self.lights)
             ds = []
             [ds.append(math.sqrt((stop_x - self.lights[i].pose.pose.position.x)**2 + (stop_y - self.lights[i].pose.pose.position.y)**2)) for i in range(n_lights)]
-            #state = self.lights[np.argmin(ds)].state
+            if (self.use_simulator_classifier):
+                groundtruth = self.lights[np.argmin(ds)].state
+                rospy.loginfo('groundtruth is {}'.format(self.get_state_string(groundtruth)))
+            
             state = self.get_light_state(self.lights[np.argmin(ds)])
-            if (state == 0):
-              state_s = "RED"
-            elif (state == 1): 
-              state_s = "YELLOW"
-            elif (state == 2):
-              state_s = "GREEN"
-            else:
-              state_s = "UNKNOWN"
-            rospy.loginfo('state is {}'.format(state_s))
+            rospy.loginfo('state is {}'.format(self.get_state_string(state)))
 
         return closest_tl_xy, closest_tl_wp_idx, state
 

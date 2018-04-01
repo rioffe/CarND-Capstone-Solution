@@ -19,7 +19,7 @@ class TLDetector(object):
 
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
-        config.gpu_options.per_process_gpu_memory_fraction = 0.4
+        config.gpu_options.per_process_gpu_memory_fraction = 0.6
 
         self.detection_session = tf.Session(graph=self.detection_graph, config=config)
 
