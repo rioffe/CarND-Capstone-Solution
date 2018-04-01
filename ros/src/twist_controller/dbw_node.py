@@ -108,13 +108,14 @@ class DBWNode(object):
             else:
                 self.prev_time = time.time()
 
+            throttle, brake, steer = self.controller.control(self.dbw_enabled,
+                                                             self.goal_linear_v,
+                                                             self.goal_angular_v,
+                                                             self.stop_a,
+                                                             self.current_linear_v,
+                                                             self.dt)
+
             if self.dbw_enabled:
-                throttle, brake, steer = self.controller.control(self.dbw_enabled,
-                                                                 self.goal_linear_v,
-                                                                 self.goal_angular_v,
-                                                                 self.stop_a,
-                                                                 self.current_linear_v,
-                                                                 self.dt)
                 self.publish(throttle, brake, steer)
 
             rate.sleep()

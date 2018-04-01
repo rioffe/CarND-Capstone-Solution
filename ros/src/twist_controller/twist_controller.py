@@ -46,30 +46,29 @@ class Controller(object):
 
             self.lowpass_a.reset()
             self.lowpass_clv.reset()
+            return 0., 0., 0.
+
+        if stop_a > self.brake_deadband:
+            current_linear_v = self.lowpass_clv.filt(current_linear_v)
+            stop_a = self.lowpass_a.filt(stop_a)
+            a_add_on = self.accel_add_on(current_linear_v)
+            stop_a -= a_add_on
+            brake = max(0, stop_a)*self.vehicle_mass*self.wheel_radius
+            throttle = 0
+        else:
+            self.lowpass_a.reset()
+            self.lowpass_clv.reset()
+            brake = 0
+            error = goal_linear_v - current_linear_v
+            throttle = self.pid_throttle.step(error, dt)
+
+        if goal_linear_v < 0.01 and current_linear_v < 0.01:
+            steer = 0
 
         else:
-            if stop_a > self.brake_deadband:
-                current_linear_v = self.lowpass_clv.filt(current_linear_v)
-                stop_a = self.lowpass_a.filt(stop_a)
-                a_add_on = self.accel_add_on(current_linear_v)
-                stop_a -= a_add_on
-                brake = max(0, stop_a)*self.vehicle_mass*self.wheel_radius
-                throttle = 0
-            else:
-                self.lowpass_a.reset()
-                self.lowpass_clv.reset()
-                brake = 0
-                error = goal_linear_v - current_linear_v
-                throttle = self.pid_throttle.step(error, dt)
-
-            if goal_linear_v < 0.01 and current_linear_v < 0.01:
-                steer = 0
-
-            else:
-                steer = self.yaw_controller.get_steering(goal_linear_v,
-                                                         goal_angular_v,
-                                                         current_linear_v)
-
+            steer = self.yaw_controller.get_steering(goal_linear_v,
+                                                     goal_angular_v,
+                                                     current_linear_v)
 
         return throttle, brake, steer
 
