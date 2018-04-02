@@ -22,6 +22,6 @@ rm -fR ros/src/tl_detector/light_classification/frozen_faster_rcnn.tar.bz2
 rm -fR ./data/traffic_light_bag_images_part*.tgz
 rm -fR .git
 cd ..
-tar zcvf CarND-Capstone-Solution.tgz CarND-Capstone-Solution
-ls -lh CarND-Capstone-Solution.tgz
-echo --- Please submit submission/CarND-Capstone-Solution.tgz --- 
+zip -r CarND-Capstone-Solution.zip CarND-Capstone-Solution/
+ls -lh CarND-Capstone-Solution.zip
+echo --- Please submit submission/CarND-Capstone-Solution.zip --- 
