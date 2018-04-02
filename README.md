@@ -33,7 +33,7 @@ We use three different models simultaneously to determine the color of the traff
 
 ## Final Project Video
 
-[![Udacity Lincoln MKZ driving in simulation using our controllers and light detection](http://img.youtube.com/vi/erSg0MA3vvo/0.jpg)](https://youtu.be/erSg0MA3vvo)
+[![Udacity Lincoln MKZ driving in simulation using our controllers and light detection](http://img.youtube.com/vi/ysx7xICU5JQ/0.jpg)](https://youtu.be/ysx7xICU5JQ)
 
 Please use **one** of the two installation options, either native **or** docker installation.
 
