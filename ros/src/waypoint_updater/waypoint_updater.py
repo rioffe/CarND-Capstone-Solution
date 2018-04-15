@@ -34,26 +34,6 @@ class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
 
-        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-        rospy.Subscriber('/target_v', Float32, self.targetv_cb)
-        rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
-
-        # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
-        rospy.Subscriber('/traffic_waypoint', Float32MultiArray, self.traffic_cb)
-        #Add dbw enabled so closest waypoint finder can reset
-        rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_cb)
-
-        # Publish closest waypoint so tl_dector.py doesn't have to repeat calculation
-        self.closest_waypoint_pub = rospy.Publisher('/closest_waypoint', Int32, queue_size=1)
-        self.final_waypoints_pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
-
-        # If a red stop light has been detected within a distance based on current speed
-        # that allows enough time for a comfortable deceleration, then we publish it
-        # so that it doesn't have to be re-calculated in twist_controller.py, where it
-        # is used to calculate torque in Newton meters to control braking
-        self.stop_a_pub = rospy.Publisher('/stop_a', Float32, queue_size=1)
-
         # TODO: Add other member variables you need below
         self.vehicle_position = None
         self.vehicle_yaw = None
@@ -71,6 +51,26 @@ class WaypointUpdater(object):
         self.stop_y = -1
 
         self.dbw_enabled = False
+
+        # Publish closest waypoint so tl_dector.py doesn't have to repeat calculation
+        self.closest_waypoint_pub = rospy.Publisher('/closest_waypoint', Int32, queue_size=1)
+        self.final_waypoints_pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
+
+        # If a red stop light has been detected within a distance based on current speed
+        # that allows enough time for a comfortable deceleration, then we publish it
+        # so that it doesn't have to be re-calculated in twist_controller.py, where it
+        # is used to calculate torque in Newton meters to control braking
+        self.stop_a_pub = rospy.Publisher('/stop_a', Float32, queue_size=1)
+
+        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
+        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        rospy.Subscriber('/target_v', Float32, self.targetv_cb)
+        rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
+
+        # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
+        rospy.Subscriber('/traffic_waypoint', Float32MultiArray, self.traffic_cb)
+        #Add dbw enabled so closest waypoint finder can reset
+        rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_cb)
 
         rospy.spin()
 

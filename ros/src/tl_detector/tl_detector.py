@@ -30,6 +30,21 @@ class TLDetector(object):
         self.tl_wp_idx = [] # Waypoint indices of traffic lights
         self.tl_xy = [] # Stop line positions of traffic lights
 
+        config_string = rospy.get_param("/traffic_light_config")
+        self.config = yaml.load(config_string)
+
+        self.bridge = CvBridge()
+        self.use_simulator_classifier = rospy.get_param('~on_simulator')
+        rospy.loginfo("Is on simulator? %s" , self.use_simulator_classifier)
+        self.light_classifier = TLClassifier(isSimulator = self.use_simulator_classifier)
+        self.listener = tf.TransformListener()
+
+        self.state = TrafficLight.UNKNOWN
+        self.last_state = TrafficLight.UNKNOWN
+        self.state_count = 0
+
+        self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Float32MultiArray, queue_size=1)
+
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
         # Add closest waypoint subscriber to receive current closest waypoint from waypoint WaypointUpdater
@@ -44,21 +59,6 @@ class TLDetector(object):
         '''
         sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
         sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
-
-        config_string = rospy.get_param("/traffic_light_config")
-        self.config = yaml.load(config_string)
-
-        self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Float32MultiArray, queue_size=1)
-
-        self.bridge = CvBridge()
-        self.use_simulator_classifier = rospy.get_param('~on_simulator')
-        rospy.loginfo("Is on simulator? %s" , self.use_simulator_classifier)
-        self.light_classifier = TLClassifier(isSimulator = self.use_simulator_classifier)
-        self.listener = tf.TransformListener()
-
-        self.state = TrafficLight.UNKNOWN
-        self.last_state = TrafficLight.UNKNOWN
-        self.state_count = 0
 
         rospy.spin()
 
