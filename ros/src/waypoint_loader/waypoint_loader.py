@@ -22,7 +22,7 @@ class WaypointLoader(object):
         rospy.init_node('waypoint_loader', log_level=rospy.DEBUG)
 
         self.pub = rospy.Publisher('/base_waypoints', Lane, queue_size=1, latch=True)
-        self.target_v_pub = rospy.Publisher('/target_v', Float32, queue_size=1)
+        self.target_v_pub = rospy.Publisher('/target_v', Float32, queue_size=1, latch=True)
 
         self.velocity = self.kmph2mps(rospy.get_param('~velocity'))
         self.new_waypoint_loader(rospy.get_param('~path'))
