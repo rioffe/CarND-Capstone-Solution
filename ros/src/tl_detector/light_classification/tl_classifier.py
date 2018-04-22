@@ -8,10 +8,13 @@ from PIL import Image
 import numpy as np
 
 class TLClassifier(object):
-    def __init__(self, model_path='light_classification/models/ssd_sim_and_real_30_03_2018',
+    def __init__(self, model_path='light_classification/models/frozen_faster_rcnn_reallife_v2',
                        isSimulator=False):
         # Primary Model
-        self.detector = TLDetector(model_path)
+        if isSimulator:
+            self.detector = TLDetector('light_classification/models/frozen_faster_rcnn_sim_v2')
+        else:
+            self.detector = TLDetector(model_path)
 
     def get_state_string(self, state):
         if (state == 0):
@@ -49,10 +52,9 @@ class TLClassifier(object):
             tl_class = tl_class_index.get(output_dict['detection_classes'][0],
                     TrafficLight.UNKNOWN)
 
-        rospy.loginfo('Yury says 0: {} with {}'.format(self.get_state_string(tl_class), output_dict['detection_scores'][0]))
+        rospy.loginfo('Marcus says: {} with {}'.format(self.get_state_string(tl_class), output_dict['detection_scores'][0]))
        
         return tl_class
-
 
 # Simple test
 def _main(_):
