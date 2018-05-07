@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import rospy
 from std_msgs.msg import Int32, Float32MultiArray
+from std_msgs.msg import MultiArrayDimension, MultiArrayDimension
 from geometry_msgs.msg import PoseStamped, Pose
 from styx_msgs.msg import TrafficLightArray, TrafficLight
 from styx_msgs.msg import Lane
@@ -109,6 +110,11 @@ class TLDetector(object):
         '''
         # Publish nearest waypoint and x-y coords of stop line so waypoint updater can slow if necessary
         red_light_pub = Float32MultiArray()
+        red_light_pub.layout.dim.append(MultiArrayDimension())
+        red_light_pub.layout.dim[0].label = "length"
+        red_light_pub.layout.dim[0].size = 3
+        red_light_pub.layout.dim[0].stride = 3
+        red_light_pub.layout.data_offset = 0
         red_light_pub.data = [light_wp, closest_tl_xy[0], closest_tl_xy[1]]
         self.upcoming_red_light_pub.publish(red_light_pub)
 
